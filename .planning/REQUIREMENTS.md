@@ -110,11 +110,64 @@
 
 ## Traceability
 
-| Phase | Requirements Covered |
-|-------|---------------------|
-| Phase 1 | CORE-01–08, GEN-01–05, PLATFORM-03 |
-| Phase 2 | MODE-C-01–02, MODE-M-01–03, MODE-A-01–04, COMBO-01–04 |
-| Phase 3 | PROG-01–05, SCORE-01–04, HINT-01–03, UI-01–06 |
-| Phase 4 | ADS-01–06 |
-| Phase 5 | THEME-01–04, PLATFORM-01–02 |
-| Phase 6 | Polish, profiling, pre-launch |
+| Requirement | Phase | Status |
+|-------------|-------|--------|
+| CORE-01 | Phase 1 — Logic Foundation | Pending |
+| CORE-02 | Phase 1 — Logic Foundation | Pending |
+| CORE-03 | Phase 1 — Logic Foundation | Pending |
+| CORE-04 | Phase 1 — Logic Foundation | Pending |
+| CORE-05 | Phase 1 — Logic Foundation | Pending |
+| CORE-06 | Phase 1 — Logic Foundation | Pending |
+| CORE-07 | Phase 1 — Logic Foundation | Pending |
+| CORE-08 | Phase 1 — Logic Foundation | Pending |
+| GEN-01 | Phase 1 — Logic Foundation | Pending |
+| GEN-02 | Phase 1 — Logic Foundation | Pending |
+| GEN-03 | Phase 1 — Logic Foundation | Pending |
+| GEN-04 | Phase 1 — Logic Foundation | Pending |
+| GEN-05 | Phase 1 — Logic Foundation | Pending |
+| PLATFORM-03 | Phase 1 — Logic Foundation | Pending |
+| MODE-C-01 | Phase 2 — Board Rendering and First Playable | Pending |
+| MODE-C-02 | Phase 2 — Board Rendering and First Playable | Pending |
+| THEME-02 | Phase 2 — Board Rendering and First Playable | Pending |
+| THEME-03 | Phase 2 — Board Rendering and First Playable | Pending |
+| THEME-04 | Phase 2 — Board Rendering and First Playable | Pending |
+| PLATFORM-01 | Phase 2 — Board Rendering and First Playable | Pending |
+| PLATFORM-02 | Phase 2 — Board Rendering and First Playable | Pending |
+| MODE-M-01 | Phase 3 — Additional Modes and Combo | Pending |
+| MODE-M-02 | Phase 3 — Additional Modes and Combo | Pending |
+| MODE-M-03 | Phase 3 — Additional Modes and Combo | Pending |
+| MODE-A-01 | Phase 3 — Additional Modes and Combo | Pending |
+| MODE-A-02 | Phase 3 — Additional Modes and Combo | Pending |
+| MODE-A-03 | Phase 3 — Additional Modes and Combo | Pending |
+| MODE-A-04 | Phase 3 — Additional Modes and Combo | Pending |
+| COMBO-01 | Phase 3 — Additional Modes and Combo | Pending |
+| COMBO-02 | Phase 3 — Additional Modes and Combo | Pending |
+| COMBO-03 | Phase 3 — Additional Modes and Combo | Pending |
+| COMBO-04 | Phase 3 — Additional Modes and Combo | Pending |
+| PROG-01 | Phase 4 — Meta Systems, Scoring, and UI | Pending |
+| PROG-02 | Phase 4 — Meta Systems, Scoring, and UI | Pending |
+| PROG-03 | Phase 4 — Meta Systems, Scoring, and UI | Pending |
+| PROG-04 | Phase 4 — Meta Systems, Scoring, and UI | Pending |
+| PROG-05 | Phase 4 — Meta Systems, Scoring, and UI | Pending |
+| SCORE-01 | Phase 4 — Meta Systems, Scoring, and UI | Pending |
+| SCORE-02 | Phase 4 — Meta Systems, Scoring, and UI | Pending |
+| SCORE-03 | Phase 4 — Meta Systems, Scoring, and UI | Pending |
+| SCORE-04 | Phase 4 — Meta Systems, Scoring, and UI | Pending |
+| HINT-01 | Phase 4 — Meta Systems, Scoring, and UI | Pending |
+| HINT-02 | Phase 4 — Meta Systems, Scoring, and UI | Pending |
+| HINT-03 | Phase 4 — Meta Systems, Scoring, and UI | Pending |
+| UI-01 | Phase 4 — Meta Systems, Scoring, and UI | Pending |
+| UI-02 | Phase 4 — Meta Systems, Scoring, and UI | Pending |
+| UI-03 | Phase 4 — Meta Systems, Scoring, and UI | Pending |
+| UI-04 | Phase 4 — Meta Systems, Scoring, and UI | Pending |
+| UI-05 | Phase 4 — Meta Systems, Scoring, and UI | Pending |
+| UI-06 | Phase 4 — Meta Systems, Scoring, and UI | Pending |
+| ADS-01 | Phase 5 — Monetization | Pending |
+| ADS-02 | Phase 5 — Monetization | Pending |
+| ADS-03 | Phase 5 — Monetization | Pending |
+| ADS-04 | Phase 5 — Monetization | Pending |
+| ADS-05 | Phase 5 — Monetization | Pending |
+| ADS-06 | Phase 5 — Monetization | Pending |
+| THEME-01 | Phase 6 — Content, Platform Compliance, and Polish | Pending |
+
+**Total: 57 / 57 requirements mapped.**
