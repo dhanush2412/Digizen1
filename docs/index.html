@@ -3,71 +3,100 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Vita Mahjong Number — Algorithm Test</title>
+<title>Vita Mahjong Number</title>
 <style>
 *{box-sizing:border-box;margin:0;padding:0}
 body{background:#110820;color:#f0e6ff;font-family:'Segoe UI',system-ui,sans-serif;
   display:flex;flex-direction:column;align-items:center;min-height:100vh;padding:16px 10px}
 h1{color:#ffd700;font-size:1.5em;text-shadow:0 0 18px rgba(255,215,0,.45);margin-bottom:2px}
-.sub{color:#9080b8;font-size:.78em;margin-bottom:12px}
+.sub{color:#9080b8;font-size:.78em;margin-bottom:4px}
+#levelBadge{display:inline-block;background:#2d1250;border:1px solid #ffd700;
+  border-radius:20px;padding:2px 14px;font-size:.82em;color:#ffd700;margin-bottom:10px}
 .row{display:flex;gap:8px;align-items:center;flex-wrap:wrap;justify-content:center;margin-bottom:8px}
 button{background:#2d1250;color:#f0e6ff;border:1px solid #6a3aad;border-radius:7px;
   padding:6px 14px;font-size:.85em;cursor:pointer;transition:.13s}
 button:hover{background:#4c2490}
 button.on{background:#6a3aad;border-color:#ffd700;color:#ffd700}
+button:disabled{opacity:.38;cursor:not-allowed;pointer-events:none}
 .seed-in{background:#1e0c40;border:1px solid #6a3aad;border-radius:6px;color:#f0e6ff;
   padding:5px 8px;font-size:.85em;width:72px;text-align:center}
 label{font-size:.82em;color:#9080b8}
-.stats{display:flex;gap:18px;margin-bottom:8px}
-.stat{text-align:center}
-.sv{font-size:1.4em;font-weight:700;color:#ffd700}
-.sl{font-size:.7em;color:#9080b8}
+.stats{display:flex;gap:10px;margin-bottom:8px;flex-wrap:wrap;justify-content:center}
+.stat{text-align:center;min-width:40px}
+.sv{font-size:1.3em;font-weight:700;color:#ffd700}
+.sv.warn{color:#feca57}.sv.crit{color:#ff6b6b}
+.sl{font-size:.67em;color:#9080b8}
 #msg{min-height:22px;font-size:.85em;font-weight:600;text-align:center;margin-bottom:6px}
-.ok{color:#1dd1a1}.warn{color:#feca57}.err{color:#ff6b6b}.win{color:#ffd700;font-size:1em}
+.ok{color:#1dd1a1}.warn-c{color:#feca57}.err{color:#ff6b6b}.win{color:#ffd700}
 canvas{border-radius:10px;cursor:pointer;box-shadow:0 6px 28px rgba(0,0,0,.55)}
 .legend{display:flex;gap:5px;flex-wrap:wrap;justify-content:center;margin-top:10px;font-size:.72em}
 .li{display:flex;align-items:center;gap:3px}
 .ld{width:11px;height:11px;border-radius:3px}
-.tip{color:#9080b8;font-size:.72em;margin-top:8px;text-align:center;max-width:480px;line-height:1.5}
+#tipText{color:#9080b8;font-size:.72em;margin-top:8px;text-align:center;
+  max-width:500px;line-height:1.6}
+/* Level-complete overlay */
+#overlay{display:none;position:fixed;top:0;left:0;width:100%;height:100%;
+  background:rgba(0,0,0,.9);z-index:100;align-items:center;justify-content:center}
+#overlay.show{display:flex}
+.ov-box{background:#1a0a38;border:2px solid #ffd700;border-radius:18px;
+  padding:36px 52px;text-align:center;box-shadow:0 0 60px rgba(255,215,0,.25);
+  max-width:380px}
+.ov-title{color:#ffd700;font-size:1.9em;font-weight:700;margin-bottom:6px}
+.ov-sub{color:#c0a8e8;font-size:1em;margin-bottom:6px}
+.ov-detail{color:#9080b8;font-size:.8em;margin-bottom:22px;min-height:18px}
+.ov-btn{font-size:1em;padding:10px 32px;background:#6a3aad;
+  border-color:#ffd700;color:#ffd700}
+.ov-btn:hover{background:#8a5acd}
 </style>
 </head>
 <body>
 
 <h1>Vita Mahjong Number</h1>
-<p class="sub">Algorithm Verification — Reverse-Generation + Solution-Sequence Replay Proof</p>
+<div id="levelBadge">Level 1 — Beginner</div>
+<p class="sub">Reverse-Generation · 100% Solvable Boards</p>
 
 <div class="row">
-  <button id="bCl" class="on" onclick="setMode('classic')">Classic (match equal)</button>
-  <button id="bMa" onclick="setMode('math')">Math Mode (sum = 10)</button>
+  <button id="bCl" class="on" onclick="setMode('classic')">Classic</button>
+  <button id="bMa" onclick="setMode('math')">Math (sum=10)</button>
   <button id="bSm" class="on" onclick="setLayout('small')">36 tiles</button>
   <button id="bLg" onclick="setLayout('large')">144 tiles</button>
 </div>
 <div class="row">
   <label>Seed:</label>
   <input class="seed-in" id="si" type="number" value="42" min="0">
-  <button onclick="newGame()">New Game</button>
-  <button onclick="rndSeed()">Random Seed</button>
+  <button onclick="restartLevel()">New Game</button>
+  <button onclick="rndSeed()">Random</button>
+  <button onclick="doShuffle()" id="btnSh">Shuffle</button>
   <button onclick="autoSolve()" id="btnAS">Auto-Solve ▶</button>
 </div>
 
 <div class="stats">
+  <div class="stat"><div class="sv" id="sLvl">1</div><div class="sl">Level</div></div>
   <div class="stat"><div class="sv" id="sRem">—</div><div class="sl">Tiles Left</div></div>
   <div class="stat"><div class="sv" id="sPairs">0</div><div class="sl">Pairs Done</div></div>
   <div class="stat"><div class="sv" id="sFree">—</div><div class="sl">Free Now</div></div>
-  <div class="stat"><div class="sv" id="sVer" style="color:#1dd1a1">✓</div><div class="sl">Verified</div></div>
+  <div class="stat"><div class="sv" id="sSh">∞</div><div class="sl">Shuffles</div></div>
+  <div class="stat" id="timerStat" style="display:none">
+    <div class="sv" id="sTime">—</div><div class="sl">Time Left</div>
+  </div>
+  <div class="stat"><div class="sv" id="sVer" style="color:#1dd1a1">✓</div>
+    <div class="sl">Verified</div></div>
 </div>
 
-<div id="msg" class="ok">Generating…</div>
+<div id="msg" class="ok">Loading…</div>
 <canvas id="cv"></canvas>
 <div class="legend" id="leg"></div>
-<p class="tip">
-  Click a <b style="color:#1dd1a1">free tile</b> (bright) to select it (gold border),
-  then click a matching tile to remove the pair.<br>
-  <b>Classic</b>: both tiles must show the same number &nbsp;|&nbsp;
-  <b>Math</b>: the two numbers must add up to 10.<br>
-  Every board is <b style="color:#ffd700">mathematically guaranteed solvable</b>
-  — the solution sequence is stored and verified before you play.
-</p>
+<p id="tipText"></p>
+
+<!-- Level-complete / game-over overlay -->
+<div id="overlay">
+  <div class="ov-box">
+    <div class="ov-title" id="ovTitle"></div>
+    <div class="ov-sub"   id="ovSub"></div>
+    <div class="ov-detail" id="ovDetail"></div>
+    <button class="ov-btn" id="ovBtn" onclick="onOverlayBtn()">Next Level ▶</button>
+  </div>
+</div>
 
 <script>
 // ─────────────────────────────────────────────────
@@ -107,21 +136,16 @@ function shuffle(a,rng){
 // ─────────────────────────────────────────────────
 // 3. Tile pools
 // ─────────────────────────────────────────────────
-// Classic: pairsPerValue*2 copies of each value 1-9
-// BuildClassicPool(2)=36 tiles, BuildClassicPool(8)=144 tiles
 function classicPool(ppv){
   const p=[];
   for(let v=1;v<=9;v++) for(let i=0;i<ppv*2;i++) p.push(v);
   return p;
 }
-// Math36: 4 of each value 1-9 = 36 tiles
-// Validates: count(v)==count(10-v) for v=1..4 ✓, count(5)=4 (even) ✓
 function mathPool36(){
   const p=[];
   for(let v=1;v<=9;v++) for(let i=0;i<4;i++) p.push(v);
   return p;
 }
-// Math144: 16 of each value 1-9 = 144 tiles (same balance checks pass)
 function mathPool144(){
   const p=[];
   for(let v=1;v<=9;v++) for(let i=0;i<16;i++) p.push(v);
@@ -152,16 +176,21 @@ function standard144(){
 // 5. Board Generator  (JS port of fixed BoardGenerator.cs)
 // ─────────────────────────────────────────────────
 function blockScore(pos,occ,free){
-  const {x,y,z}=dec(pos);
+  const{x,y,z}=dec(pos);
   occ.add(pos);
   const nb=affectedNeighbors(x,y,z);
   let sc=0;
-  for(const n of nb){ if(!free.has(n)) continue; const d=dec(n); if(!isFree(d.x,d.y,d.z,occ))sc++; }
+  for(const n of nb){
+    if(!free.has(n))continue;
+    const d=dec(n);
+    if(!isFree(d.x,d.y,d.z,occ))sc++;
+  }
   occ.delete(pos);
   return sc;
 }
 function selectPair(free,occ){
-  const cands=[]; for(const s of free){cands.push(s);if(cands.length>=20)break;}
+  const cands=[];
+  for(const s of free){cands.push(s);if(cands.length>=20)break;}
   if(cands.length<2)return[-1,-1];
   let bA=cands[0],bB=cands[1],bSc=Infinity;
   for(let i=0;i<cands.length;i++){
@@ -184,7 +213,7 @@ function findComp(pool,mode,vA,skip){
 }
 function placeTile(pos,val,occ,free,lset,board){
   free.delete(pos); occ.add(pos); board.set(pos,val);
-  const {x,y,z}=dec(pos);
+  const{x,y,z}=dec(pos);
   const nb=affectedNeighbors(x,y,z);
   nb.push(enc(x,y,z+1)); // FIX 3 — evaluate z+1 neighbour
   for(const n of nb){
@@ -239,14 +268,40 @@ function verifySolution(board,solution,mode){
 }
 
 // ─────────────────────────────────────────────────
-// 7. Rendering
+// 7. Difficulty level table (15 levels, 5 axes)
+//    sz: 'small'=36 tiles | 'large'=144 tiles
+//    mode: 'classic' same value | 'math' sum=10
+//    hl: 'full' all free | 'partial' matchable only | 'none' hidden
+//    sh: shuffles (Infinity=unlimited)
+//    t: timer seconds (0=no timer)
+// ─────────────────────────────────────────────────
+const LEVELS=[
+  {sz:'small',mode:'classic',hl:'full',   sh:Infinity,t:0,   seed:42,    label:'Beginner'},
+  {sz:'small',mode:'classic',hl:'full',   sh:Infinity,t:0,   seed:137,   label:'Beginner'},
+  {sz:'small',mode:'classic',hl:'full',   sh:Infinity,t:0,   seed:256,   label:'Easy'},
+  {sz:'small',mode:'math',   hl:'full',   sh:Infinity,t:0,   seed:512,   label:'Easy'},
+  {sz:'small',mode:'math',   hl:'full',   sh:Infinity,t:0,   seed:777,   label:'Medium'},
+  {sz:'large',mode:'math',   hl:'full',   sh:3,        t:0,   seed:1024,  label:'Medium'},
+  {sz:'large',mode:'math',   hl:'partial',sh:3,        t:0,   seed:2048,  label:'Hard'},
+  {sz:'large',mode:'math',   hl:'partial',sh:2,        t:0,   seed:3141,  label:'Hard'},
+  {sz:'large',mode:'math',   hl:'partial',sh:2,        t:600, seed:4096,  label:'Expert'},
+  {sz:'large',mode:'math',   hl:'partial',sh:1,        t:540, seed:5000,  label:'Expert'},
+  {sz:'large',mode:'math',   hl:'none',   sh:1,        t:480, seed:6666,  label:'Master'},
+  {sz:'large',mode:'math',   hl:'none',   sh:1,        t:420, seed:7777,  label:'Master'},
+  {sz:'large',mode:'math',   hl:'none',   sh:0,        t:360, seed:8888,  label:'Grandmaster'},
+  {sz:'large',mode:'math',   hl:'none',   sh:0,        t:300, seed:9999,  label:'Grandmaster'},
+  {sz:'large',mode:'math',   hl:'none',   sh:0,        t:240, seed:12345, label:'Legend'},
+];
+
+// ─────────────────────────────────────────────────
+// 8. Rendering
 // ─────────────────────────────────────────────────
 const TS=54,ZDX=7,ZDY=9,PAD=22;
 const VCOL=[null,
   '#e74c3c','#e67e22','#f1c40f','#2ecc71',
   '#00cec9','#3498db','#a855f7','#e91e63','#fd79a8'
 ];
-function tsp(x,y,z,mxZ){ return{sx:PAD+x*TS+z*ZDX, sy:PAD+y*TS-z*ZDY+mxZ*ZDY}; }
+function tsp(x,y,z,mxZ){return{sx:PAD+x*TS+z*ZDX,sy:PAD+y*TS-z*ZDY+mxZ*ZDY};}
 function rr(ctx,x,y,w,h,r){
   ctx.beginPath();
   ctx.moveTo(x+r,y);ctx.lineTo(x+w-r,y);ctx.arcTo(x+w,y,x+w,y+r,r);
@@ -263,13 +318,10 @@ function shade(hex,amt){
 }
 function drawTile(ctx,sx,sy,val,st){
   const TW=TS-2,TH=TS-2,BASE=VCOL[val]||'#888';
-  // depth shadow
   ctx.fillStyle=shade(BASE,-50);
   rr(ctx,sx+3,sy+3,TW,TH,7);ctx.fill();
-  // face
   ctx.fillStyle=st==='blocked'?shade(BASE,-70):st==='sel'?shade(BASE,50):BASE;
   rr(ctx,sx,sy,TW,TH,7);ctx.fill();
-  // border
   if(st==='sel'){
     ctx.strokeStyle='#ffd700';ctx.lineWidth=2.5;
     rr(ctx,sx,sy,TW,TH,7);ctx.stroke();
@@ -277,7 +329,6 @@ function drawTile(ctx,sx,sy,val,st){
     ctx.strokeStyle='rgba(255,255,255,0.35)';ctx.lineWidth=1.2;
     rr(ctx,sx,sy,TW,TH,7);ctx.stroke();
   }
-  // number
   const alpha=st==='blocked'?0.22:0.95;
   ctx.fillStyle=`rgba(255,255,255,${alpha})`;
   ctx.font=`bold ${st==='blocked'?17:21}px 'Segoe UI',sans-serif`;
@@ -286,14 +337,21 @@ function drawTile(ctx,sx,sy,val,st){
 }
 
 // ─────────────────────────────────────────────────
-// 8. Game state
+// 9. Game state
 // ─────────────────────────────────────────────────
 const G={
   slots:[],origBoard:new Map(),curBoard:new Map(),
   occ:new Set(),solution:[],sel:null,
   mode:'classic',sz:'small',seed:42,
-  verified:false,pairs:0,won:false,noMoves:false,
-  solving:false
+  verified:false,pairs:0,won:false,noMoves:false,solving:false,
+  // Difficulty state
+  level:1,
+  shufflesLeft:Infinity,
+  highlightMode:'full',
+  timerHandle:null,
+  timeRemaining:0,
+  timedOut:false,
+  _overlayCallback:null,
 };
 
 const cv=document.getElementById('cv');
@@ -304,13 +362,133 @@ function maxXYZ(slots){
   for(const p of slots){const d=dec(p);if(d.x>mx)mx=d.x;if(d.y>my)my=d.y;if(d.z>mz)mz=d.z;}
   return{mx,my,mz};
 }
-
 function getPool(){
-  if(G.sz==='small') return G.mode==='math'?mathPool36():classicPool(2);
+  if(G.sz==='small')return G.mode==='math'?mathPool36():classicPool(2);
   return G.mode==='math'?mathPool144():classicPool(8);
 }
-function getSlots(){ return G.sz==='small'?small36():standard144(); }
+function getSlots(){return G.sz==='small'?small36():standard144();}
 
+// ─────────────────────────────────────────────────
+// 10. Difficulty helpers
+// ─────────────────────────────────────────────────
+function fmtTime(s){
+  const m=Math.floor(s/60),r=s%60;
+  return`${m}:${r.toString().padStart(2,'0')}`;
+}
+
+// Partial highlight: returns Set of free tiles that have at least one valid match partner
+function matchableTiles(freeSet,board,mode){
+  const matchable=new Set();
+  const fa=[...freeSet];
+  for(let i=0;i<fa.length;i++){
+    for(let j=i+1;j<fa.length;j++){
+      const vA=board.get(fa[i]),vB=board.get(fa[j]);
+      if(mode==='classic'?vA===vB:vA+vB===10){
+        matchable.add(fa[i]);
+        matchable.add(fa[j]);
+      }
+    }
+  }
+  return matchable;
+}
+
+// Reviewer fix: never call newGame() from timer — set flag only
+function startTimer(seconds){
+  clearInterval(G.timerHandle);
+  G.timerHandle=null;
+  G.timeRemaining=seconds;
+  document.getElementById('timerStat').style.display='';
+  updateStats();
+  G.timerHandle=setInterval(()=>{
+    if(G.won||G.timedOut){clearInterval(G.timerHandle);G.timerHandle=null;return;}
+    G.timeRemaining=Math.max(0,G.timeRemaining-1);
+    updateStats();
+    if(G.timeRemaining===0){
+      clearInterval(G.timerHandle);G.timerHandle=null;
+      G.timedOut=true;
+      msg('⏱ Time Up! Game Over.','err');
+      render();
+    }
+  },1000);
+}
+
+function syncButtons(){
+  document.getElementById('bCl').className=G.mode==='classic'?'on':'';
+  document.getElementById('bMa').className=G.mode==='math'?'on':'';
+  document.getElementById('bSm').className=G.sz==='small'?'on':'';
+  document.getElementById('bLg').className=G.sz==='large'?'on':'';
+}
+
+// loadLevel: full reset for a new level
+function loadLevel(n){
+  const cfg=LEVELS[n-1];
+  G.level=n;
+  G.sz=cfg.sz;
+  G.mode=cfg.mode;
+  G.highlightMode=cfg.hl;
+  G.shufflesLeft=cfg.sh;
+  syncButtons();
+  document.getElementById('si').value=cfg.seed;
+  newGame();
+}
+
+// restartLevel: reset current level (bound to "New Game" button)
+function restartLevel(){
+  loadLevel(G.level);
+}
+
+// showOverlay: level-complete / game-over screen
+function showOverlay(title,sub,detail,btnLabel,cb){
+  document.getElementById('ovTitle').textContent=title;
+  document.getElementById('ovSub').textContent=sub;
+  document.getElementById('ovDetail').textContent=detail||'';
+  document.getElementById('ovBtn').textContent=btnLabel||'Next Level ▶';
+  G._overlayCallback=cb;
+  document.getElementById('overlay').classList.add('show');
+}
+function onOverlayBtn(){
+  document.getElementById('overlay').classList.remove('show');
+  if(G._overlayCallback)G._overlayCallback();
+  G._overlayCallback=null;
+}
+
+function levelComplete(){
+  clearInterval(G.timerHandle);G.timerHandle=null;
+  const cfg=LEVELS[G.level-1];
+  const next=G.level+1;
+  if(next>LEVELS.length){
+    showOverlay(
+      '🏆 All 15 Levels Complete!',
+      'You\'ve mastered Vita Mahjong Number!',
+      'Reverse-generation algorithm: undefeated.',
+      'Play Again',
+      ()=>loadLevel(1)
+    );
+    return;
+  }
+  const ncfg=LEVELS[next-1];
+  const changes=[];
+  if(ncfg.sz!==cfg.sz)changes.push('Larger board (144 tiles)');
+  if(ncfg.mode!==cfg.mode)changes.push('Math Mode unlocked');
+  if(ncfg.hl==='partial'&&cfg.hl==='full')changes.push('Hints reduced');
+  if(ncfg.hl==='none'&&cfg.hl!=='none')changes.push('Hints removed');
+  if(ncfg.sh<cfg.sh&&cfg.sh!==Infinity)changes.push(`Shuffles: ${ncfg.sh}`);
+  if(ncfg.sh!==Infinity&&cfg.sh===Infinity)changes.push(`Shuffles: ${ncfg.sh}`);
+  if(ncfg.t>0&&cfg.t===0)changes.push('⏱ Timer added');
+  else if(ncfg.t<cfg.t&&ncfg.t>0)changes.push(`⏱ Timer: ${fmtTime(ncfg.t)}`);
+  showOverlay(
+    `Level ${G.level} Complete! 🎉`,
+    `Next: Level ${next} — ${ncfg.label}`,
+    changes.length?`Incoming: ${changes.join(' · ')}` : '',
+    `Level ${next} ▶`,
+    ()=>loadLevel(next)
+  );
+}
+
+// ─────────────────────────────────────────────────
+// 11. Mode / layout toggles (manual player controls)
+// ─────────────────────────────────────────────────
+// Reviewer fix: route through setLayout/setMode so buttons stay in sync
 function setMode(m){
   G.mode=m;
   document.getElementById('bCl').className=m==='classic'?'on':'';
@@ -326,14 +504,22 @@ function setLayout(s){
 function rndSeed(){
   const s=Math.floor(Math.random()*999999);
   document.getElementById('si').value=s;
-  G.seed=s; newGame();
+  G.seed=s;newGame();
 }
 
+// ─────────────────────────────────────────────────
+// 12. newGame — regenerate board, keep current level/shuffles
+// ─────────────────────────────────────────────────
 function newGame(){
+  // Reviewer fix: clear timer first, reset verified early
+  clearInterval(G.timerHandle);G.timerHandle=null;
+  G.timedOut=false;
+  G.verified=false;
   G.solving=false;
+
   const sv=parseInt(document.getElementById('si').value)||42;
-  G.seed=sv; G.sel=null; G.pairs=0; G.won=false; G.noMoves=false;
-  msg('Generating board…','warn');
+  G.seed=sv;G.sel=null;G.pairs=0;G.won=false;G.noMoves=false;
+  msg('Generating board…','warn-c');
 
   G.slots=getSlots();
   const pool=getPool();
@@ -341,7 +527,7 @@ function newGame(){
   const result=generate(G.slots,pool,G.mode,sv,tries);
 
   if(!result){
-    msg(`Generation FAILED after ${tries} retries (seed ${sv})`, 'err');
+    msg(`Generation FAILED after ${tries} retries (seed ${sv})`,'err');
     document.getElementById('sVer').textContent='✗';
     document.getElementById('sVer').style.color='#ff6b6b';
     return;
@@ -355,93 +541,152 @@ function newGame(){
 
   const sv2=document.getElementById('sVer');
   if(G.verified){
-    sv2.textContent='✓'; sv2.style.color='#1dd1a1';
-    msg(`Board ready ✓ — ${result.solution.length} pairs, all verified solvable (seed ${sv})`, 'ok');
+    sv2.textContent='✓';sv2.style.color='#1dd1a1';
+    msg(`Level ${G.level} ready ✓ — ${result.solution.length} pairs (seed ${sv})`,'ok');
   } else {
-    sv2.textContent='✗'; sv2.style.color='#ff6b6b';
-    msg('⚠ SOLUTION VALIDATION FAILED — algorithm bug detected!', 'err');
+    sv2.textContent='✗';sv2.style.color='#ff6b6b';
+    msg('⚠ SOLUTION VALIDATION FAILED — algorithm bug!','err');
   }
 
-  resize(); render(); updateStats(); buildLegend();
+  // Update difficulty UI
+  const cfg=LEVELS[G.level-1]||LEVELS[LEVELS.length-1];
+  document.getElementById('levelBadge').textContent=`Level ${G.level} — ${cfg.label}`;
+  document.getElementById('sLvl').textContent=G.level;
+  document.getElementById('sSh').textContent=G.shufflesLeft===Infinity?'∞':G.shufflesLeft;
+  document.getElementById('btnSh').disabled=(G.shufflesLeft===0);
+
+  // Timer
+  if(cfg.t>0){
+    startTimer(cfg.t);
+  } else {
+    document.getElementById('timerStat').style.display='none';
+    G.timeRemaining=0;
+  }
+
+  // Hint tip text
+  const htip=cfg.hl==='none'
+    ?'<b style="color:#ff6b6b">No hints</b> — free tiles are not highlighted. All difficulty, no safety net.'
+    :cfg.hl==='partial'
+    ?'<b style="color:#feca57">Partial hints</b> — only tiles with a valid match partner are highlighted.'
+    :'Click a <b style="color:#1dd1a1">free tile</b> (bright) to select, then click a matching tile.';
+  document.getElementById('tipText').innerHTML=
+    htip+' Every board is <b style="color:#ffd700">mathematically guaranteed solvable</b>.';
+
+  resize();render();updateStats();buildLegend();
 }
 
-function freeTiles(){ const f=new Set(); for(const p of G.occ){const d=dec(p);if(isFree(d.x,d.y,d.z,G.occ))f.add(p);} return f; }
-
+// ─────────────────────────────────────────────────
+// 13. Gameplay
+// ─────────────────────────────────────────────────
+function freeTiles(){
+  const f=new Set();
+  for(const p of G.occ){const d=dec(p);if(isFree(d.x,d.y,d.z,G.occ))f.add(p);}
+  return f;
+}
 function hasValidPair(){
   const free=[...freeTiles()];
-  for(let i=0;i<free.length;i++) for(let j=i+1;j<free.length;j++){
+  for(let i=0;i<free.length;i++)for(let j=i+1;j<free.length;j++){
     const vA=G.curBoard.get(free[i]),vB=G.curBoard.get(free[j]);
-    if(G.mode==='classic'?vA===vB:vA+vB===10) return true;
+    if(G.mode==='classic'?vA===vB:vA+vB===10)return true;
   }
   return false;
 }
-
 function removePair(pA,pB){
-  G.occ.delete(pA); G.occ.delete(pB);
-  G.curBoard.delete(pA); G.curBoard.delete(pB);
+  G.occ.delete(pA);G.occ.delete(pB);
+  G.curBoard.delete(pA);G.curBoard.delete(pB);
   G.pairs++;
 }
 
 function onTileClick(pos){
-  if(G.won||G.noMoves||G.solving)return;
+  if(G.won||G.noMoves||G.solving||G.timedOut)return;
   const d=dec(pos);
   if(!isFree(d.x,d.y,d.z,G.occ))return;
 
-  if(G.sel===null){ G.sel=pos; }
-  else if(G.sel===pos){ G.sel=null; }
-  else {
-    const vA=G.curBoard.get(G.sel), vB=G.curBoard.get(pos);
+  if(G.sel===null){G.sel=pos;}
+  else if(G.sel===pos){G.sel=null;}
+  else{
+    const vA=G.curBoard.get(G.sel),vB=G.curBoard.get(pos);
     const match=G.mode==='classic'?vA===vB:vA+vB===10;
     if(match){
-      removePair(G.sel,pos); G.sel=null;
-      if(G.occ.size===0){ G.won=true; msg('🎉 YOU WIN! All tiles cleared!','win'); }
-      else if(!hasValidPair()){ G.noMoves=true; msg('No valid pairs remain — game over. Press New Game.','err'); }
-      else { msg(`Matched! ${G.mode==='math'?`${vA} + ${vB} = 10`:`${vA} = ${vA} ✓`}`,'ok'); }
+      removePair(G.sel,pos);G.sel=null;
+      if(G.occ.size===0){
+        G.won=true;
+        clearInterval(G.timerHandle);G.timerHandle=null;
+        setTimeout(levelComplete,500);
+      } else if(!hasValidPair()){
+        G.noMoves=true;
+        if(G.shufflesLeft>0){
+          msg(`No pairs left — use Shuffle (${G.shufflesLeft===Infinity?'∞':G.shufflesLeft} left).`,'warn-c');
+        } else {
+          msg('No valid pairs and no shuffles left — press New Game to retry.','err');
+        }
+      } else {
+        msg(`${G.mode==='math'?`${vA} + ${vB} = 10`:`${vA} = ${vA} ✓`}`,'ok');
+      }
     } else {
-      msg(`${G.mode==='math'?`${vA} + ${vB} ≠ 10`:`${vA} ≠ ${vB}`} — try again`,'warn');
+      msg(`${G.mode==='math'?`${vA} + ${vB} ≠ 10`:`${vA} ≠ ${vB}`} — try again`,'warn-c');
       G.sel=pos;
     }
   }
-  render(); updateStats();
+  render();updateStats();
+}
+
+function doShuffle(){
+  if(G.timedOut||G.won)return;
+  if(G.shufflesLeft===0){msg('No shuffles remaining!','err');return;}
+  if(G.shufflesLeft!==Infinity)G.shufflesLeft--;
+  // New random seed, same level config (shuffles already decremented — newGame won't reset)
+  const newSeed=Math.floor(Math.random()*999999);
+  document.getElementById('si').value=newSeed;
+  G.noMoves=false;
+  newGame();
 }
 
 // ─────────────────────────────────────────────────
-// 9. Auto-solve (animates through solution sequence)
+// 14. Auto-solve (reviewer fix: clears timer, uses G.solving guard)
 // ─────────────────────────────────────────────────
 async function autoSolve(){
-  if(G.solving||G.won)return;
-  if(!G.verified){ msg('Cannot auto-solve: solution not verified','err'); return; }
-  G.solving=true; G.sel=null;
-  msg('Auto-solving…','warn');
+  if(G.solving||G.won||G.timedOut)return;
+  if(!G.verified){msg('Cannot auto-solve: solution not verified','err');return;}
+  G.solving=true;G.sel=null;
+  // Pause timer during auto-solve (reviewer: avoid setInterval/async race)
+  clearInterval(G.timerHandle);G.timerHandle=null;
+  msg('Auto-solving…','warn-c');
   for(const[pA,pB]of G.solution){
-    if(!G.solving)break;
+    if(!G.solving)break; // newGame() sets solving=false → clean exit
     if(!G.occ.has(pA)||!G.occ.has(pB))continue;
-    G.sel=pA; render(); updateStats();
+    G.sel=pA;render();updateStats();
     await sleep(90);
-    removePair(pA,pB); G.sel=null; render(); updateStats();
+    removePair(pA,pB);G.sel=null;render();updateStats();
     await sleep(90);
   }
   G.solving=false;
-  if(G.occ.size===0){ G.won=true; msg('🎉 AUTO-SOLVE COMPLETE — Algorithm is 100% correct!','win'); }
-  else { msg('Auto-solve finished (some pairs already removed manually)','ok'); }
-  render(); updateStats();
+  if(G.occ.size===0){
+    G.won=true;
+    setTimeout(levelComplete,500);
+  } else {
+    msg('Auto-solve finished (some pairs already removed manually)','ok');
+  }
+  render();updateStats();
 }
-function sleep(ms){ return new Promise(r=>setTimeout(r,ms)); }
+function sleep(ms){return new Promise(r=>setTimeout(r,ms));}
 
 // ─────────────────────────────────────────────────
-// 10. Canvas rendering
+// 15. Canvas rendering
 // ─────────────────────────────────────────────────
 function resize(){
   const{mx,my,mz}=maxXYZ(G.slots);
   cv.width =PAD*2+(mx+1)*TS+mz*ZDX+3;
   cv.height=PAD*2+(my+1)*TS+mz*ZDY+3;
 }
-
 function render(){
   ctx.clearRect(0,0,cv.width,cv.height);
   ctx.fillStyle='#0a0518';ctx.fillRect(0,0,cv.width,cv.height);
   const{mz}=maxXYZ(G.slots);
   const free=freeTiles();
+  // Compute matchable set only when needed (partial highlight)
+  const matchable=G.highlightMode==='partial'
+    ?matchableTiles(free,G.curBoard,G.mode):null;
 
   const vis=[...G.slots].filter(p=>G.occ.has(p));
   vis.sort((a,b)=>{
@@ -449,26 +694,28 @@ function render(){
     if(za!==zb)return za-zb;
     return dec(a).y-dec(b).y;
   });
-
   for(const p of vis){
     const{x,y,z}=dec(p);
     const{sx,sy}=tsp(x,y,z,mz);
     const val=G.curBoard.get(p);
-    const st=p===G.sel?'sel':free.has(p)?'free':'blocked';
+    let st;
+    if(p===G.sel)               st='sel';
+    else if(G.highlightMode==='none')   st='blocked';
+    else if(G.highlightMode==='partial')st=(matchable&&matchable.has(p))?'free':'blocked';
+    else                        st=free.has(p)?'free':'blocked';
     drawTile(ctx,sx,sy,val,st);
   }
 }
-
 cv.addEventListener('click',e=>{
   const rect=cv.getBoundingClientRect();
-  const cx=e.clientX-rect.left, cy=e.clientY-rect.top;
+  const cx=e.clientX-rect.left,cy=e.clientY-rect.top;
   const{mz}=maxXYZ(G.slots);
   const vis=[...G.slots].filter(p=>G.occ.has(p));
   vis.sort((a,b)=>dec(b).z-dec(a).z); // highest z first for hit test
   for(const p of vis){
     const{x,y,z}=dec(p);
     const{sx,sy}=tsp(x,y,z,mz);
-    if(cx>=sx&&cx<sx+TS-2&&cy>=sy&&cy<sy+TS-2){ onTileClick(p); return; }
+    if(cx>=sx&&cx<sx+TS-2&&cy>=sy&&cy<sy+TS-2){onTileClick(p);return;}
   }
 });
 
@@ -476,15 +723,19 @@ function updateStats(){
   document.getElementById('sRem').textContent=G.occ.size;
   document.getElementById('sPairs').textContent=G.pairs;
   document.getElementById('sFree').textContent=freeTiles().size;
+  document.getElementById('sSh').textContent=G.shufflesLeft===Infinity?'∞':G.shufflesLeft;
+  if(G.timeRemaining>0){
+    const el=document.getElementById('sTime');
+    el.textContent=fmtTime(G.timeRemaining);
+    el.className='sv'+(G.timeRemaining<=30?' crit':G.timeRemaining<=60?' warn':'');
+  }
 }
-
 function msg(txt,cls){
   const el=document.getElementById('msg');
-  el.textContent=txt; el.className=cls||'ok';
+  el.textContent=txt;el.className=cls||'ok';
 }
-
 function buildLegend(){
-  const leg=document.getElementById('leg'); leg.innerHTML='';
+  const leg=document.getElementById('leg');leg.innerHTML='';
   const items=G.mode==='classic'
     ?[1,2,3,4,5,6,7,8,9].map(v=>[v,`${v}`])
     :[[1,'1+9'],[2,'2+8'],[3,'3+7'],[4,'4+6'],[5,'5+5']];
@@ -499,7 +750,7 @@ function buildLegend(){
 // ─────────────────────────────────────────────────
 // Init
 // ─────────────────────────────────────────────────
-window.onload=()=>newGame();
+window.onload=()=>loadLevel(1);
 </script>
 </body>
 </html>
