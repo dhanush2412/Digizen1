@@ -188,13 +188,25 @@ function blockScore(pos,occ,free){
   occ.delete(pos);
   return sc;
 }
-function selectPair(free,occ,maxCands){
-  // Sort by z ascending: place bottom-layer tiles first.
-  // A higher-z placement blocks the tile directly below it (z-1) from being
-  // placed later. By always preferring lower-z candidates we prevent that.
+function selectPair(free,occ,rng){
+  // Three fixes over the previous version:
+  // FIX A — Strict layer enforcement: ONLY pick tiles from the minimum z-layer.
+  //          Prevents z=1 placements from blocking still-unplaced z=0 tiles above.
+  // FIX B — No candidate cap: consider ALL tiles in the minimum layer (was 40).
+  //          The old slice(0,40) permanently excluded 20 of the 60 z=0 tiles;
+  //          their neighbors would eventually be placed, sandwiching them.
+  // FIX C — Randomise within each z-layer before scoring.
+  //          selectPair previously had NO rng usage, making every retry within
+  //          generate() explore the IDENTICAL spatial sequence (deterministic
+  //          JS Set iteration order). Now each retry truly differs.
   const arr=[...free];
-  arr.sort((a,b)=>dec(a).z-dec(b).z);
-  const cands=arr.slice(0,maxCands);
+  shuffle(arr,rng);                          // randomise (FIX C)
+  arr.sort((a,b)=>dec(a).z-dec(b).z);       // stable z-sort preserves shuffle within z
+  if(arr.length<2)return[-1,-1];
+  const minZ=dec(arr[0]).z;
+  // Strict layer: only the lowest z currently in free (FIX A + FIX B)
+  let end=0; while(end<arr.length&&dec(arr[end]).z===minZ)end++;
+  const cands=arr.slice(0,end);
   if(cands.length<2)return[-1,-1];
   let bA=cands[0],bB=cands[1],bSc=Infinity;
   for(let i=0;i<cands.length;i++){
@@ -226,14 +238,14 @@ function placeTile(pos,val,occ,free,lset,board){
     if(isFree(d.x,d.y,d.z,occ)) free.add(n); else free.delete(n);
   }
 }
-function tryGen(slots,pool,mode,rng,maxCands){
+function tryGen(slots,pool,mode,rng){
   const lset=new Set(slots);
   const occ=new Set(), free=new Set(slots); // FIX 1 — seed ALL positions
   const wp=[...pool]; shuffle(wp,rng);
   const board=new Map(), order=[];
   while(wp.length>=2){
     if(free.size<2)return null;
-    const[sA,sB]=selectPair(free,occ,maxCands);
+    const[sA,sB]=selectPair(free,occ,rng);
     if(sA<0||sA===sB)return null;
     const vA=wp[0], iB=findComp(wp,mode,vA,0);
     if(iB<0)return null;
@@ -246,10 +258,10 @@ function tryGen(slots,pool,mode,rng,maxCands){
   if(board.size!==slots.length)return null;
   return{board, solution:[...order].reverse()};
 }
-function generate(slots,pool,mode,seed,tries,maxCands){
+function generate(slots,pool,mode,seed,tries){
   const rng=makeRng(seed);
   for(let i=0;i<tries;i++){
-    const r=tryGen(slots,[...pool],mode,rng,maxCands);
+    const r=tryGen(slots,[...pool],mode,rng);
     if(r)return r;
   }
   return null;
@@ -527,10 +539,8 @@ async function newGame(){
 
   G.slots=getSlots();
   const pool=getPool();
-  // Large boards use more candidates so the heuristic avoids premature blocking.
-  // small: 20 cands (190 pairs checked) — fast enough
-  // large: 40 cands (780 pairs checked) — much better spatial choices
-  const maxCands=G.sz==='small'?20:40;
+  // selectPair now uses RNG + strict-layer enforcement (no maxCands needed).
+  // Each retry explores a genuinely different spatial sequence.
   const tries=G.sz==='small'?80:200;
 
   // Yield to browser so "Generating…" message renders before heavy work
@@ -540,7 +550,7 @@ async function newGame(){
   // Each attempt yields to the event loop so the UI never freezes.
   let result=null, actualSeed=sv;
   for(let attempt=0;attempt<10;attempt++){
-    result=generate(G.slots,pool,G.mode,sv+attempt,tries,maxCands);
+    result=generate(G.slots,pool,G.mode,sv+attempt,tries);
     if(result){actualSeed=sv+attempt;break;}
     await new Promise(r=>setTimeout(r,0)); // keep browser responsive
   }
