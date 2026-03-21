@@ -188,9 +188,9 @@ function blockScore(pos,occ,free){
   occ.delete(pos);
   return sc;
 }
-function selectPair(free,occ){
+function selectPair(free,occ,maxCands){
   const cands=[];
-  for(const s of free){cands.push(s);if(cands.length>=20)break;}
+  for(const s of free){cands.push(s);if(cands.length>=maxCands)break;}
   if(cands.length<2)return[-1,-1];
   let bA=cands[0],bB=cands[1],bSc=Infinity;
   for(let i=0;i<cands.length;i++){
@@ -222,14 +222,14 @@ function placeTile(pos,val,occ,free,lset,board){
     if(isFree(d.x,d.y,d.z,occ)) free.add(n); else free.delete(n);
   }
 }
-function tryGen(slots,pool,mode,rng){
+function tryGen(slots,pool,mode,rng,maxCands){
   const lset=new Set(slots);
   const occ=new Set(), free=new Set(slots); // FIX 1 — seed ALL positions
   const wp=[...pool]; shuffle(wp,rng);
   const board=new Map(), order=[];
   while(wp.length>=2){
     if(free.size<2)return null;
-    const[sA,sB]=selectPair(free,occ);
+    const[sA,sB]=selectPair(free,occ,maxCands);
     if(sA<0||sA===sB)return null;
     const vA=wp[0], iB=findComp(wp,mode,vA,0);
     if(iB<0)return null;
@@ -242,10 +242,10 @@ function tryGen(slots,pool,mode,rng){
   if(board.size!==slots.length)return null;
   return{board, solution:[...order].reverse()};
 }
-function generate(slots,pool,mode,seed,tries=150){
+function generate(slots,pool,mode,seed,tries,maxCands){
   const rng=makeRng(seed);
   for(let i=0;i<tries;i++){
-    const r=tryGen(slots,[...pool],mode,rng);
+    const r=tryGen(slots,[...pool],mode,rng,maxCands);
     if(r)return r;
   }
   return null;
@@ -523,22 +523,26 @@ async function newGame(){
 
   G.slots=getSlots();
   const pool=getPool();
-  const tries=G.sz==='small'?80:150;
+  // Large boards use more candidates so the heuristic avoids premature blocking.
+  // small: 20 cands (190 pairs checked) — fast enough
+  // large: 40 cands (780 pairs checked) — much better spatial choices
+  const maxCands=G.sz==='small'?20:40;
+  const tries=G.sz==='small'?80:200;
 
   // Yield to browser so "Generating…" message renders before heavy work
   await new Promise(r=>setTimeout(r,15));
 
-  // Try configured seed, fall back up to 4 more seeds if needed.
+  // Try configured seed, fall back up to 9 more seeds if needed.
   // Each attempt yields to the event loop so the UI never freezes.
   let result=null, actualSeed=sv;
-  for(let attempt=0;attempt<5;attempt++){
-    result=generate(G.slots,pool,G.mode,sv+attempt,tries);
+  for(let attempt=0;attempt<10;attempt++){
+    result=generate(G.slots,pool,G.mode,sv+attempt,tries,maxCands);
     if(result){actualSeed=sv+attempt;break;}
     await new Promise(r=>setTimeout(r,0)); // keep browser responsive
   }
 
   if(!result){
-    msg(`Generation FAILED on seeds ${sv}–${sv+4}. Try a different seed.`,'err');
+    msg(`Generation FAILED on seeds ${sv}–${sv+9}. Try a different seed.`,'err');
     document.getElementById('sVer').textContent='✗';
     document.getElementById('sVer').style.color='#ff6b6b';
     return;
