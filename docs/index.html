@@ -212,10 +212,11 @@ function selectPair(free,occ,rng){
   shuffle(arr,rng);                    // different spatial sequence each retry
   arr.sort((a,b)=>dec(a).z-dec(b).z); // prefer lower z-layers (stable within shuffle)
   if(arr.length<2)return[-1,-1];
+  const cap=Math.min(arr.length,50); // limit O(N²) for 144-tile boards
   let bA=-1,bB=-1,bSc=Infinity;
-  for(let i=0;i<arr.length;i++){
+  for(let i=0;i<cap;i++){
     const si=blockScore(arr[i],occ,free);
-    for(let j=i+1;j<arr.length;j++){
+    for(let j=i+1;j<cap;j++){
       if(!pairSafe(arr[i],arr[j],occ))continue; // skip mutually-blocking pairs
       const sc=si+blockScore(arr[j],occ,free);
       if(sc<bSc){bSc=sc;bA=arr[i];bB=arr[j];}
