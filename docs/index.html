@@ -189,8 +189,12 @@ function blockScore(pos,occ,free){
   return sc;
 }
 function selectPair(free,occ,maxCands){
-  const cands=[];
-  for(const s of free){cands.push(s);if(cands.length>=maxCands)break;}
+  // Sort by z ascending: place bottom-layer tiles first.
+  // A higher-z placement blocks the tile directly below it (z-1) from being
+  // placed later. By always preferring lower-z candidates we prevent that.
+  const arr=[...free];
+  arr.sort((a,b)=>dec(a).z-dec(b).z);
+  const cands=arr.slice(0,maxCands);
   if(cands.length<2)return[-1,-1];
   let bA=cands[0],bB=cands[1],bSc=Infinity;
   for(let i=0;i<cands.length;i++){
