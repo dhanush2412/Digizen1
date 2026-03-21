@@ -203,10 +203,10 @@ function selectPair(free,occ,rng){
   shuffle(arr,rng);                          // randomise (FIX C)
   arr.sort((a,b)=>dec(a).z-dec(b).z);       // stable z-sort preserves shuffle within z
   if(arr.length<2)return[-1,-1];
-  const minZ=dec(arr[0]).z;
-  // Strict layer: only the lowest z currently in free (FIX A + FIX B)
-  let end=0; while(end<arr.length&&dec(arr[end]).z===minZ)end++;
-  const cands=arr.slice(0,end);
+  // Use ALL free tiles (z-sorted, shuffled within z). Strict minZ enforcement
+  // breaks the reverse-generation guarantee: placing only z=minZ forces upper
+  // layers last in placement = first in solution, where they are not yet free.
+  const cands=arr;
   if(cands.length<2)return[-1,-1];
   let bA=cands[0],bB=cands[1],bSc=Infinity;
   for(let i=0;i<cands.length;i++){
