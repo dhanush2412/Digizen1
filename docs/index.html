@@ -523,15 +523,24 @@ function newGame(){
 
   G.slots=getSlots();
   const pool=getPool();
-  const tries=G.sz==='small'?80:250;
-  const result=generate(G.slots,pool,G.mode,sv,tries);
+  const tries=G.sz==='small'?80:400;
+
+  // Try configured seed first, then fall back to seed+1..+19 if needed
+  // (some seeds are statistically bad for large Math boards)
+  let result=null, actualSeed=sv;
+  for(let attempt=0;attempt<20;attempt++){
+    result=generate(G.slots,pool,G.mode,sv+attempt,tries);
+    if(result){actualSeed=sv+attempt;break;}
+  }
 
   if(!result){
-    msg(`Generation FAILED after ${tries} retries (seed ${sv})`,'err');
+    msg(`Generation FAILED after 20 seed attempts starting at seed ${sv}`,'err');
     document.getElementById('sVer').textContent='✗';
     document.getElementById('sVer').style.color='#ff6b6b';
     return;
   }
+  // If seed shifted, update the display so it stays honest
+  if(actualSeed!==sv) document.getElementById('si').value=actualSeed;
 
   G.verified=verifySolution(result.board,result.solution,G.mode);
   G.origBoard=new Map(result.board);
