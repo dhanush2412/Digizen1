@@ -212,14 +212,17 @@ function selectPair(free,occ,rng){
   shuffle(arr,rng);                    // different spatial sequence each retry
   arr.sort((a,b)=>dec(a).z-dec(b).z); // prefer lower z-layers (stable within shuffle)
   if(arr.length<2)return[-1,-1];
-  const cap=Math.min(arr.length,50); // limit O(N²) for 144-tile boards
-  let bA=-1,bB=-1,bSc=Infinity;
+  const cap=Math.min(arr.length,30); // C#=20; 30 gives variety with shuffle
+  // Precompute blockScores once (avoids redundant calls in O(N²) inner loop)
+  const sc=new Int8Array(cap);
+  for(let i=0;i<cap;i++) sc[i]=blockScore(arr[i],occ,free);
+  let bA=-1,bB=-1,bSc=127;
   for(let i=0;i<cap;i++){
-    const si=blockScore(arr[i],occ,free);
     for(let j=i+1;j<cap;j++){
-      if(!pairSafe(arr[i],arr[j],occ))continue; // skip mutually-blocking pairs
-      const sc=si+blockScore(arr[j],occ,free);
-      if(sc<bSc){bSc=sc;bA=arr[i];bB=arr[j];}
+      const s=sc[i]+sc[j];
+      if(s>=bSc)continue;                       // prune: can't beat best
+      if(!pairSafe(arr[i],arr[j],occ))continue;
+      bSc=s;bA=arr[i];bB=arr[j];
     }
   }
   return[bA,bB];
@@ -264,9 +267,10 @@ function tryGen(slots,pool,mode,rng){
   if(board.size!==slots.length)return null;
   return{board, solution:[...order].reverse()};
 }
-function generate(slots,pool,mode,seed,tries){
+async function generate(slots,pool,mode,seed,tries){
   const rng=makeRng(seed);
   for(let i=0;i<tries;i++){
+    if(i%40===39) await new Promise(r=>setTimeout(r,0)); // yield to keep UI alive
     const r=tryGen(slots,[...pool],mode,rng);
     if(r)return r;
   }
@@ -556,7 +560,7 @@ async function newGame(){
   // Each attempt yields to the event loop so the UI never freezes.
   let result=null, actualSeed=sv;
   for(let attempt=0;attempt<10;attempt++){
-    result=generate(G.slots,pool,G.mode,sv+attempt,tries);
+    result=await generate(G.slots,pool,G.mode,sv+attempt,tries);
     if(result){actualSeed=sv+attempt;break;}
     await new Promise(r=>setTimeout(r,0)); // keep browser responsive
   }
