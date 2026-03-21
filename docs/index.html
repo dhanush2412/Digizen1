@@ -212,17 +212,25 @@ function selectPair(free,occ,rng){
   shuffle(arr,rng);                    // different spatial sequence each retry
   arr.sort((a,b)=>dec(a).z-dec(b).z); // prefer lower z-layers (stable within shuffle)
   if(arr.length<2)return[-1,-1];
-  const cap=Math.min(arr.length,30); // C#=20; 30 gives variety with shuffle
-  // Precompute blockScores once (avoids redundant calls in O(N²) inner loop)
+  const cap=Math.min(arr.length,30);
+  // Precompute blockScores for fast path (avoids redundant calls in O(cap²) loop)
   const sc=new Int8Array(cap);
   for(let i=0;i<cap;i++) sc[i]=blockScore(arr[i],occ,free);
   let bA=-1,bB=-1,bSc=127;
   for(let i=0;i<cap;i++){
     for(let j=i+1;j<cap;j++){
       const s=sc[i]+sc[j];
-      if(s>=bSc)continue;                       // prune: can't beat best
+      if(s>=bSc)continue;
       if(!pairSafe(arr[i],arr[j],occ))continue;
       bSc=s;bA=arr[i];bB=arr[j];
+    }
+  }
+  // Fallback: if no safe pair in cap, scan ALL free tiles for any safe pair
+  if(bA<0){
+    for(let i=cap;i<arr.length;i++){
+      for(let j=i+1;j<arr.length;j++){
+        if(pairSafe(arr[i],arr[j],occ)){bA=arr[i];bB=arr[j];i=arr.length;break;}
+      }
     }
   }
   return[bA,bB];
