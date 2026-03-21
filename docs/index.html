@@ -510,7 +510,7 @@ function rndSeed(){
 // ─────────────────────────────────────────────────
 // 12. newGame — regenerate board, keep current level/shuffles
 // ─────────────────────────────────────────────────
-function newGame(){
+async function newGame(){
   // Reviewer fix: clear timer first, reset verified early
   clearInterval(G.timerHandle);G.timerHandle=null;
   G.timedOut=false;
@@ -523,23 +523,26 @@ function newGame(){
 
   G.slots=getSlots();
   const pool=getPool();
-  const tries=G.sz==='small'?80:400;
+  const tries=G.sz==='small'?80:150;
 
-  // Try configured seed first, then fall back to seed+1..+19 if needed
-  // (some seeds are statistically bad for large Math boards)
+  // Yield to browser so "Generating…" message renders before heavy work
+  await new Promise(r=>setTimeout(r,15));
+
+  // Try configured seed, fall back up to 4 more seeds if needed.
+  // Each attempt yields to the event loop so the UI never freezes.
   let result=null, actualSeed=sv;
-  for(let attempt=0;attempt<20;attempt++){
+  for(let attempt=0;attempt<5;attempt++){
     result=generate(G.slots,pool,G.mode,sv+attempt,tries);
     if(result){actualSeed=sv+attempt;break;}
+    await new Promise(r=>setTimeout(r,0)); // keep browser responsive
   }
 
   if(!result){
-    msg(`Generation FAILED after 20 seed attempts starting at seed ${sv}`,'err');
+    msg(`Generation FAILED on seeds ${sv}–${sv+4}. Try a different seed.`,'err');
     document.getElementById('sVer').textContent='✗';
     document.getElementById('sVer').style.color='#ff6b6b';
     return;
   }
-  // If seed shifted, update the display so it stays honest
   if(actualSeed!==sv) document.getElementById('si').value=actualSeed;
 
   G.verified=verifySolution(result.board,result.solution,G.mode);
