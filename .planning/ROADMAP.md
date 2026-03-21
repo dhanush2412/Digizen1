@@ -21,11 +21,11 @@ Depth: comprehensive. Total v1 requirements: 57.
 
 ---
 
-## Phase 1 — Logic Foundation
+### Phase 1: Logic Foundation
 
 **Goal:** Pure C# game logic is provably correct through unit tests before any Unity scene is involved.
 
-**Dependencies:** None. This is the foundation for all other phases.
+**Depends on:** None. This is the foundation for all other phases.
 
 **Requirements:**
 - CORE-01: Free tile visual state is determinable from data alone
@@ -53,7 +53,7 @@ Depth: comprehensive. Total v1 requirements: 57.
 
 ---
 
-## Phase 2 — Board Rendering and First Playable
+### Phase 2: Board Rendering and First Playable
 
 **Goal:** A player can load the app, see a rendered board, select and match tiles in Classic Mode, and complete or lose a level — all on a physical Android device.
 
@@ -78,7 +78,7 @@ Depth: comprehensive. Total v1 requirements: 57.
 
 ---
 
-## Phase 3 — Additional Modes and Combo
+### Phase 3: Additional Modes and Combo
 
 **Goal:** All three game modes (Classic, Math Mode, Active Mind) are fully playable, and the combo system is active across all modes.
 
@@ -107,7 +107,7 @@ Depth: comprehensive. Total v1 requirements: 57.
 
 ---
 
-## Phase 4 — Meta Systems, Scoring, and UI
+### Phase 4: Meta Systems, Scoring, and UI
 
 **Goal:** The game has a complete product shell — menus, level progression, scoring, hints, win/lose screens — and a player can navigate the full game loop from main menu to level completion and back.
 
