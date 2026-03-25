@@ -2,803 +2,1428 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Vita Mahjong Number</title>
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<title>Vita Mahjong Number — Digizen</title>
 <style>
-*{box-sizing:border-box;margin:0;padding:0}
-body{background:#110820;color:#f0e6ff;font-family:'Segoe UI',system-ui,sans-serif;
-  display:flex;flex-direction:column;align-items:center;min-height:100vh;padding:16px 10px}
-h1{color:#ffd700;font-size:1.5em;text-shadow:0 0 18px rgba(255,215,0,.45);margin-bottom:2px}
-.sub{color:#9080b8;font-size:.78em;margin-bottom:4px}
-#levelBadge{display:inline-block;background:#2d1250;border:1px solid #ffd700;
-  border-radius:20px;padding:2px 14px;font-size:.82em;color:#ffd700;margin-bottom:10px}
-.row{display:flex;gap:8px;align-items:center;flex-wrap:wrap;justify-content:center;margin-bottom:8px}
-button{background:#2d1250;color:#f0e6ff;border:1px solid #6a3aad;border-radius:7px;
-  padding:6px 14px;font-size:.85em;cursor:pointer;transition:.13s}
-button:hover{background:#4c2490}
-button.on{background:#6a3aad;border-color:#ffd700;color:#ffd700}
-button:disabled{opacity:.38;cursor:not-allowed;pointer-events:none}
-.seed-in{background:#1e0c40;border:1px solid #6a3aad;border-radius:6px;color:#f0e6ff;
-  padding:5px 8px;font-size:.85em;width:72px;text-align:center}
-label{font-size:.82em;color:#9080b8}
-.stats{display:flex;gap:10px;margin-bottom:8px;flex-wrap:wrap;justify-content:center}
-.stat{text-align:center;min-width:40px}
-.sv{font-size:1.3em;font-weight:700;color:#ffd700}
-.sv.warn{color:#feca57}.sv.crit{color:#ff6b6b}
-.sl{font-size:.67em;color:#9080b8}
-#msg{min-height:22px;font-size:.85em;font-weight:600;text-align:center;margin-bottom:6px}
-.ok{color:#1dd1a1}.warn-c{color:#feca57}.err{color:#ff6b6b}.win{color:#ffd700}
-canvas{border-radius:10px;cursor:pointer;box-shadow:0 6px 28px rgba(0,0,0,.55)}
-.legend{display:flex;gap:5px;flex-wrap:wrap;justify-content:center;margin-top:10px;font-size:.72em}
-.li{display:flex;align-items:center;gap:3px}
-.ld{width:11px;height:11px;border-radius:3px}
-#tipText{color:#9080b8;font-size:.72em;margin-top:8px;text-align:center;
-  max-width:500px;line-height:1.6}
-/* Level-complete overlay */
-#overlay{display:none;position:fixed;top:0;left:0;width:100%;height:100%;
-  background:rgba(0,0,0,.9);z-index:100;align-items:center;justify-content:center}
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+@keyframes dropIn{0%{opacity:0;transform:translateY(-30px) scale(.7)}60%{transform:translateY(3px) scale(1.02)}100%{opacity:1;transform:translateY(0) scale(1)}}
+@keyframes popIn{0%{transform:scale(0)}60%{transform:scale(1.15)}100%{transform:scale(1)}}
+@keyframes shakeX{0%,100%{transform:translateX(0)}20%{transform:translateX(-5px)}40%{transform:translateX(5px)}60%{transform:translateX(-3px)}80%{transform:translateX(3px)}}
+@keyframes floatUp{0%{opacity:1;transform:translateY(0) scale(1)}100%{opacity:0;transform:translateY(-60px) scale(1.2)}}
+@keyframes encouragePop{0%{transform:scale(0) rotate(-8deg);opacity:0}40%{transform:scale(1.2) rotate(2deg);opacity:1}100%{transform:scale(1) rotate(0);opacity:1}}
+@keyframes encourageFade{0%{opacity:1;transform:translateY(0)}100%{opacity:0;transform:translateY(-30px)}}
+@keyframes victoryGlow{0%,100%{box-shadow:0 0 20px rgba(255,215,0,.2)}50%{box-shadow:0 0 60px rgba(255,215,0,.5)}}
+@keyframes slotPulse{0%,100%{border-color:rgba(255,255,255,.06)}50%{border-color:rgba(255,255,255,.18)}}
+@keyframes matchFlash{0%{background:rgba(255,215,0,.3)}100%{background:transparent}}
+@keyframes trayRemove{0%{transform:scale(1);opacity:1}100%{transform:scale(0);opacity:0}}
+@keyframes shimmer{0%{background-position:-200% 0}100%{background-position:200% 0}}
+
+body{
+  background:linear-gradient(175deg,#1a7d68 0%,#14695a 30%,#0f5749 60%,#0a4a3d 100%);
+  color:#fff;font-family:'Segoe UI',system-ui,-apple-system,sans-serif;
+  display:flex;flex-direction:column;align-items:center;
+  min-height:100vh;min-height:100dvh;
+  overflow-x:hidden;user-select:none;
+  position:relative;
+}
+body::before{
+  content:'';position:fixed;top:0;left:0;width:100%;height:100%;
+  background:
+    radial-gradient(ellipse 80% 60% at 20% 30%,rgba(255,255,255,.03),transparent),
+    radial-gradient(ellipse 60% 80% at 80% 70%,rgba(255,255,255,.02),transparent),
+    radial-gradient(ellipse 50% 50% at 50% 50%,rgba(0,0,0,.05),transparent 70%);
+  pointer-events:none;z-index:0;
+}
+
+/* ─── TOP BAR ─── */
+.top-bar{
+  width:100%;max-width:420px;display:flex;align-items:center;justify-content:space-between;
+  padding:12px 16px 6px;position:relative;z-index:2;
+}
+.top-btn{
+  width:44px;height:44px;border-radius:50%;
+  background:linear-gradient(145deg,#9B6E4C,#6B4226);
+  border:2.5px solid #B8845C;display:flex;align-items:center;justify-content:center;
+  cursor:pointer;font-size:1.2em;color:#fff;
+  box-shadow:0 3px 10px rgba(0,0,0,.4),inset 0 1px 1px rgba(255,255,255,.12);
+  text-shadow:0 1px 2px rgba(0,0,0,.3);
+}
+.top-btn:hover{filter:brightness(1.1)}
+.top-btn:active{transform:scale(.95)}
+.score-display{
+  font-size:1.8em;font-weight:800;color:#fff;
+  text-shadow:0 2px 6px rgba(0,0,0,.4);letter-spacing:2px;
+}
+
+/* ─── HOLDER TRAY (7 slots) ─── */
+.holder-tray{
+  width:min(370px,92vw);
+  background:linear-gradient(180deg,#3D2010,#261008);
+  border:3px solid #A0724E;border-radius:16px;
+  padding:8px 10px;margin:8px auto 8px;
+  display:flex;gap:6px;justify-content:center;align-items:center;
+  box-shadow:
+    inset 0 4px 16px rgba(0,0,0,.6),
+    inset 0 -2px 8px rgba(0,0,0,.3),
+    0 4px 14px rgba(0,0,0,.35);
+  min-height:56px;position:relative;z-index:2;
+}
+.holder-slot{
+  width:42px;height:42px;border-radius:8px;
+  background:rgba(0,0,0,.45);
+  border:1.5px solid rgba(255,255,255,.06);
+  display:flex;align-items:center;justify-content:center;
+  position:relative;transition:all .2s;
+  animation:slotPulse 4s ease infinite;
+}
+.holder-slot.filled{
+  background:rgba(255,255,255,.95);border-color:rgba(0,0,0,.12);
+  animation:popIn .3s ease-out;box-shadow:0 2px 8px rgba(0,0,0,.2);
+}
+.holder-slot.matched{animation:trayRemove .35s ease-in forwards}
+.holder-tile-num{
+  font-size:1.2em;font-weight:800;
+  text-shadow:none;
+}
+
+/* ─── LEVEL BADGE ─── */
+.level-badge{
+  font-size:.7em;color:rgba(255,255,255,.55);margin-bottom:4px;
+  text-align:center;letter-spacing:.5px;position:relative;z-index:2;
+  cursor:pointer;
+}
+.level-badge:hover{color:rgba(255,255,255,.85)}
+
+/* ─── LEVEL SWITCHER ─── */
+.lvl-drawer{
+  position:fixed;top:0;left:0;width:100%;height:100%;
+  background:rgba(0,0,0,.55);z-index:100;
+  display:flex;align-items:flex-end;justify-content:center;
+  opacity:0;pointer-events:none;transition:opacity .25s;
+}
+.lvl-drawer.open{opacity:1;pointer-events:all}
+.lvl-panel{
+  width:100%;max-width:420px;
+  background:linear-gradient(180deg,#1d6e5e,#124a3d);
+  border-radius:20px 20px 0 0;
+  border-top:2px solid rgba(255,255,255,.12);
+  padding:16px 16px 32px;
+  transform:translateY(100%);transition:transform .3s cubic-bezier(.25,.8,.25,1);
+}
+.lvl-drawer.open .lvl-panel{transform:translateY(0)}
+.lvl-panel-title{
+  text-align:center;font-size:.85em;font-weight:700;
+  color:rgba(255,255,255,.6);letter-spacing:1px;text-transform:uppercase;
+  margin-bottom:14px;
+}
+.lvl-grid{
+  display:grid;grid-template-columns:repeat(5,1fr);gap:8px;
+}
+.lvl-chip{
+  aspect-ratio:1;border-radius:12px;
+  background:rgba(255,255,255,.08);border:1.5px solid rgba(255,255,255,.12);
+  display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;
+  cursor:pointer;transition:all .15s;
+  color:#fff;
+}
+.lvl-chip:hover{background:rgba(255,255,255,.18);transform:scale(1.06)}
+.lvl-chip:active{transform:scale(.96)}
+.lvl-chip.current{
+  background:linear-gradient(135deg,#2ecc71,#1a9c58);
+  border-color:#5eff9e;
+  box-shadow:0 2px 10px rgba(46,204,113,.4);
+}
+.lvl-chip-num{font-size:1.1em;font-weight:800;line-height:1}
+.lvl-chip-lbl{font-size:.45em;opacity:.7;text-align:center;line-height:1.2}
+
+/* ─── GAME BOARD ─── */
+.game-area{
+  position:relative;display:inline-block;
+  margin:0 auto;z-index:1;
+}
+canvas{border-radius:12px;cursor:pointer}
+#pfx{position:absolute;top:0;left:0;pointer-events:none;z-index:30;border-radius:12px}
+
+/* ─── ENCOURAGE POPUP ─── */
+.encourage-popup{
+  position:absolute;top:35%;left:50%;transform:translate(-50%,-50%);
+  pointer-events:none;z-index:50;
+  font-size:2.2em;font-weight:900;text-align:center;
+  text-shadow:0 0 20px rgba(255,215,0,.6),0 3px 8px rgba(0,0,0,.5);
+  animation:encouragePop .5s ease-out forwards;
+}
+.encourage-popup.fade{animation:encourageFade .7s ease-in forwards}
+
+/* ─── FLOAT SCORE ─── */
+.float-score{
+  position:absolute;pointer-events:none;z-index:40;
+  font-size:1em;font-weight:800;color:#ffd700;
+  text-shadow:0 0 8px rgba(255,215,0,.5);
+  animation:floatUp .9s ease-out forwards;
+}
+
+/* ─── BOTTOM ACTION BAR ─── */
+.action-bar{
+  width:100%;max-width:420px;
+  display:flex;align-items:center;justify-content:space-evenly;
+  padding:14px 20px 20px;margin-top:auto;position:relative;z-index:2;
+}
+.action-btn{
+  width:66px;height:66px;border-radius:50%;
+  background:linear-gradient(150deg,#9B6E4C 0%,#6B4226 60%,#5C3A1E 100%);
+  border:3px solid #B8845C;
+  display:flex;flex-direction:column;align-items:center;justify-content:center;
+  cursor:pointer;color:#fff;
+  box-shadow:0 4px 14px rgba(0,0,0,.45),inset 0 1px 2px rgba(255,255,255,.1);
+  position:relative;transition:all .15s;
+}
+.action-btn:hover{filter:brightness(1.12);transform:translateY(-2px)}
+.action-btn:active{transform:translateY(1px);box-shadow:0 2px 6px rgba(0,0,0,.4)}
+.action-btn:disabled{opacity:.4;cursor:not-allowed;pointer-events:none;transform:none}
+.action-icon{font-size:1.5em;line-height:1}
+.action-label{font-size:.5em;font-weight:700;margin-top:2px;opacity:.75;letter-spacing:.3px}
+.action-badge{
+  position:absolute;top:-3px;right:-3px;
+  background:#e74c3c;color:#fff;font-size:.5em;font-weight:800;
+  padding:1px 5px;border-radius:8px;
+  box-shadow:0 1px 4px rgba(0,0,0,.3);
+}
+.action-badge.free-badge{background:#2ecc71}
+
+/* ─── DEV CONTROLS ─── */
+.dev-controls{
+  display:flex;gap:4px;flex-wrap:wrap;justify-content:center;
+  padding:4px 8px;opacity:.5;font-size:.7em;position:relative;z-index:2;
+}
+.dev-controls button{font-size:.85em;padding:3px 8px;background:rgba(0,0,0,.3);border:1px solid rgba(255,255,255,.2);color:#fff;border-radius:4px}
+.dev-controls button:hover{background:rgba(0,0,0,.5)}
+.dev-controls input{width:55px;font-size:.85em;padding:2px 4px;background:rgba(0,0,0,.3);border:1px solid rgba(255,255,255,.2);color:#fff;border-radius:4px;text-align:center}
+.dev-controls label{color:rgba(255,255,255,.5)}
+
+/* ─── MSG ─── */
+#msg{
+  min-height:14px;font-size:.68em;text-align:center;margin:2px 0;
+  font-weight:600;opacity:.7;position:relative;z-index:2;
+}
+.ok{color:#a8e6cf}.warn-c{color:#ffd93d}.err{color:#ff6b6b}
+
+/* ─── GAME OVER POPUP ─── */
+#gameOverPopup{
+  display:none;position:fixed;top:0;left:0;width:100%;height:100%;
+  background:rgba(0,0,0,.65);z-index:110;
+  align-items:center;justify-content:center;
+  backdrop-filter:blur(4px);
+}
+#gameOverPopup.show{display:flex}
+.go-box{
+  background:linear-gradient(170deg,#f5ead8,#e8d5b5);
+  border-radius:20px;border:3px solid #c8a97a;
+  padding:0 0 20px;width:min(310px,88vw);
+  box-shadow:0 8px 40px rgba(0,0,0,.55);
+  overflow:hidden;animation:dropIn .35s ease-out;
+  text-align:center;
+}
+.go-header{
+  background:linear-gradient(180deg,#8B4513,#6B3010);
+  padding:12px 20px;
+  font-size:1.15em;font-weight:800;color:#f5e0c0;
+  letter-spacing:.5px;
+  border-bottom:2px solid #c8a97a;
+}
+.go-tray{
+  display:flex;gap:8px;justify-content:center;align-items:center;
+  padding:18px 16px 10px;flex-wrap:wrap;
+}
+.go-tile{
+  width:52px;height:52px;border-radius:10px;
+  background:#fff;border:2px solid #d0c0a0;
+  display:flex;align-items:center;justify-content:center;
+  font-size:1.3em;font-weight:800;
+  box-shadow:0 2px 6px rgba(0,0,0,.18),inset 0 1px 2px rgba(255,255,255,.9);
+}
+.go-revive{
+  margin:8px 16px 6px;width:calc(100% - 32px);
+  background:linear-gradient(180deg,#4cd97b,#28a855);
+  border:none;border-radius:26px;
+  color:#fff;font-size:1em;font-weight:800;
+  padding:13px 0;cursor:pointer;
+  box-shadow:0 4px 12px rgba(40,168,85,.4),inset 0 1px 1px rgba(255,255,255,.25);
+  position:relative;transition:filter .15s;
+}
+.go-revive:hover{filter:brightness(1.1)}
+.go-revive:active{filter:brightness(.95);transform:scale(.98)}
+.go-revive-badge{
+  position:absolute;top:-6px;right:-4px;
+  background:#e74c3c;color:#fff;
+  font-size:.65em;font-weight:900;
+  width:22px;height:22px;border-radius:50%;
+  display:flex;align-items:center;justify-content:center;
+  box-shadow:0 1px 4px rgba(0,0,0,.3);
+}
+.go-restart{
+  margin:0 16px;width:calc(100% - 32px);
+  background:linear-gradient(180deg,#f0d9b5,#ddc090);
+  border:none;border-radius:26px;
+  color:#7a4a1a;font-size:.95em;font-weight:700;
+  padding:12px 0;cursor:pointer;
+  box-shadow:0 3px 8px rgba(0,0,0,.2);
+  transition:filter .15s;
+}
+.go-restart:hover{filter:brightness(1.06)}
+.go-restart:active{filter:brightness(.95);transform:scale(.98)}
+
+/* ─── OVERLAY ─── */
+#overlay{
+  display:none;position:fixed;top:0;left:0;width:100%;height:100%;
+  background:rgba(0,0,0,.88);z-index:100;align-items:center;justify-content:center;
+  backdrop-filter:blur(6px);
+}
 #overlay.show{display:flex}
-.ov-box{background:#1a0a38;border:2px solid #ffd700;border-radius:18px;
-  padding:36px 52px;text-align:center;box-shadow:0 0 60px rgba(255,215,0,.25);
-  max-width:380px}
-.ov-title{color:#ffd700;font-size:1.9em;font-weight:700;margin-bottom:6px}
-.ov-sub{color:#c0a8e8;font-size:1em;margin-bottom:6px}
-.ov-detail{color:#9080b8;font-size:.8em;margin-bottom:22px;min-height:18px}
-.ov-btn{font-size:1em;padding:10px 32px;background:#6a3aad;
-  border-color:#ffd700;color:#ffd700}
-.ov-btn:hover{background:#8a5acd}
+.ov-box{
+  background:linear-gradient(145deg,#1a7d68,#0d4a3e);
+  border:2.5px solid #ffd700;border-radius:20px;
+  padding:28px 40px;text-align:center;
+  box-shadow:0 0 50px rgba(255,215,0,.15);
+  max-width:340px;animation:dropIn .5s ease-out,victoryGlow 2s ease-in-out infinite;
+}
+.ov-title{color:#ffd700;font-size:1.6em;font-weight:800;margin-bottom:6px;text-shadow:0 0 15px rgba(255,215,0,.3)}
+.ov-sub{color:#c8e6c9;font-size:.9em;margin-bottom:8px}
+.ov-stats{display:flex;gap:16px;justify-content:center;margin-bottom:14px}
+.ov-stat-item{text-align:center}
+.ov-stat-val{font-size:1.4em;font-weight:800;color:#ffd700}
+.ov-stat-lbl{font-size:.6em;color:rgba(255,255,255,.6);text-transform:uppercase}
+.ov-detail{color:rgba(255,255,255,.5);font-size:.72em;margin-bottom:16px;min-height:14px}
+.ov-btn{
+  font-size:.9em;padding:10px 28px;
+  background:linear-gradient(145deg,#9B6E4C,#6B4226);
+  border:2.5px solid #B8845C;color:#fff;border-radius:12px;
+  font-weight:700;cursor:pointer;
+  box-shadow:0 3px 10px rgba(0,0,0,.3),inset 0 1px 1px rgba(255,255,255,.1);
+}
+.ov-btn:hover{filter:brightness(1.15)}
 </style>
 </head>
 <body>
 
-<h1>Vita Mahjong Number</h1>
-<div id="levelBadge">Level 1 — Beginner</div>
-<p class="sub">Reverse-Generation · 100% Solvable Boards</p>
-
-<div class="row">
-  <button id="bCl" class="on" onclick="setMode('classic')">Classic</button>
-  <button id="bMa" onclick="setMode('math')">Math (sum=10)</button>
-  <button id="bSm" class="on" onclick="setLayout('small')">36 tiles</button>
-  <button id="bLg" onclick="setLayout('large')">144 tiles</button>
+<!-- TOP BAR -->
+<div class="top-bar">
+  <div class="top-btn" onclick="restartLevel()">&#8592;</div>
+  <div class="score-display" id="scoreDisplay">0</div>
+  <div class="top-btn" onclick="openLvlDrawer()" title="Switch Level">&#9776;</div>
 </div>
-<div class="row">
+
+<!-- HOLDER TRAY (7 slots) -->
+<div class="holder-tray" id="holderTray">
+  <div class="holder-slot"></div>
+  <div class="holder-slot"></div>
+  <div class="holder-slot"></div>
+  <div class="holder-slot"></div>
+  <div class="holder-slot"></div>
+  <div class="holder-slot"></div>
+  <div class="holder-slot"></div>
+</div>
+
+<div class="level-badge" id="levelBadge" onclick="openLvlDrawer()">Level 1 — Beginner</div>
+<div id="msg" class="ok"></div>
+
+<!-- GAME BOARD -->
+<div class="game-area" id="gameArea">
+  <canvas id="cv"></canvas>
+  <canvas id="pfx"></canvas>
+</div>
+
+<!-- BOTTOM ACTION BAR -->
+<div class="action-bar">
+  <button class="action-btn" id="btnShuffle" onclick="doShuffle()">
+    <span class="action-icon">&#10227;</span>
+    <span class="action-label">Shuffle</span>
+    <span class="action-badge" id="shuffleBadge">Lv.1</span>
+  </button>
+  <button class="action-btn" id="btnHint" onclick="doHint()">
+    <span class="action-icon">&#128161;</span>
+    <span class="action-label">Hint</span>
+    <span class="action-badge free-badge">Free</span>
+  </button>
+  <button class="action-btn" id="btnUndo" onclick="doUndo()">
+    <span class="action-icon">&#8617;</span>
+    <span class="action-label">Undo</span>
+    <span class="action-badge free-badge">Free</span>
+  </button>
+</div>
+
+<!-- DEV CONTROLS (hidden) -->
+<div class="dev-controls" style="display:none">
   <label>Seed:</label>
-  <input class="seed-in" id="si" type="number" value="42" min="0">
-  <button onclick="restartLevel()">New Game</button>
-  <button onclick="rndSeed()">Random</button>
-  <button onclick="doShuffle()" id="btnSh">Shuffle</button>
-  <button onclick="autoSolve()" id="btnAS">Auto-Solve ▶</button>
+  <input id="si" type="number" value="42" min="0">
+  <button onclick="rndSeed()">Rnd</button>
+  <button onclick="autoSolve()">Auto</button>
 </div>
 
-<div class="stats">
-  <div class="stat"><div class="sv" id="sLvl">1</div><div class="sl">Level</div></div>
-  <div class="stat"><div class="sv" id="sRem">—</div><div class="sl">Tiles Left</div></div>
-  <div class="stat"><div class="sv" id="sPairs">0</div><div class="sl">Pairs Done</div></div>
-  <div class="stat"><div class="sv" id="sFree">—</div><div class="sl">Free Now</div></div>
-  <div class="stat"><div class="sv" id="sSh">∞</div><div class="sl">Shuffles</div></div>
-  <div class="stat" id="timerStat" style="display:none">
-    <div class="sv" id="sTime">—</div><div class="sl">Time Left</div>
+<!-- LEVEL SWITCHER DRAWER -->
+<div class="lvl-drawer" id="lvlDrawer" onclick="closeLvlDrawer(event)">
+  <div class="lvl-panel">
+    <div class="lvl-panel-title">Select Level</div>
+    <div class="lvl-grid" id="lvlGrid"></div>
   </div>
-  <div class="stat"><div class="sv" id="sVer" style="color:#1dd1a1">✓</div>
-    <div class="sl">Verified</div></div>
 </div>
 
-<div id="msg" class="ok">Loading…</div>
-<canvas id="cv"></canvas>
-<div class="legend" id="leg"></div>
-<p id="tipText"></p>
+<!-- GAME OVER POPUP -->
+<div id="gameOverPopup">
+  <div class="go-box">
+    <div class="go-header">Out of space</div>
+    <div class="go-tray" id="goTray"></div>
+    <button class="go-revive" onclick="doRevive()">
+      Revive
+      <span class="go-revive-badge" id="goReviveBadge">5</span>
+    </button>
+    <button class="go-restart" onclick="doGameOverRestart()">Restart</button>
+  </div>
+</div>
 
-<!-- Level-complete / game-over overlay -->
+<!-- OVERLAY -->
 <div id="overlay">
   <div class="ov-box">
     <div class="ov-title" id="ovTitle"></div>
-    <div class="ov-sub"   id="ovSub"></div>
+    <div class="ov-sub" id="ovSub"></div>
+    <div class="ov-stats" id="ovStats"></div>
     <div class="ov-detail" id="ovDetail"></div>
-    <button class="ov-btn" id="ovBtn" onclick="onOverlayBtn()">Next Level ▶</button>
+    <button class="ov-btn" id="ovBtn" onclick="onOverlayBtn()">Next Level</button>
   </div>
 </div>
 
 <script>
-// ─────────────────────────────────────────────────
-// 1. Position encoding  (mirrors TilePosition.cs)
-// ─────────────────────────────────────────────────
-function enc(x,y,z){ return (x&31)|((y&31)<<5)|((z&7)<<10); }
-function dec(p){ return {x:p&31, y:(p>>5)&31, z:(p>>10)&7}; }
+// ═══════════════════════════════════════
+// POSITION ENCODING
+// ═══════════════════════════════════════
+function enc(x,y,z){return(x&31)|((y&31)<<5)|((z&7)<<10)}
+function dec(p){return{x:p&31,y:(p>>5)&31,z:(p>>10)&7}}
+
+// Classic Mahjong Solitaire blocking:
+// A tile is free if nothing on top AND at least one side (left or right) is clear
 function isFree(x,y,z,occ){
   if(occ.has(enc(x,y,z+1)))return false;
-  return !occ.has(enc(x-1,y,z))||!occ.has(enc(x+1,y,z));
+  const lb=occ.has(enc(x-1,y,z));
+  const rb=occ.has(enc(x+1,y,z));
+  return !lb||!rb;
 }
+
 function affectedNeighbors(x,y,z){
-  const r=[enc(x-1,y,z),enc(x+1,y,z)];
-  if(z>0){r.push(enc(x,y,z-1),enc(x-1,y,z-1),enc(x+1,y,z-1));}
+  const r=[];
+  if(z>0)r.push(enc(x,y,z-1));
+  r.push(enc(x-1,y,z));
+  r.push(enc(x+1,y,z));
   return r;
 }
 
-// ─────────────────────────────────────────────────
-// 2. PRNG — Mulberry32 (seeded, deterministic)
-// ─────────────────────────────────────────────────
+// ═══════════════════════════════════════
+// PRNG
+// ═══════════════════════════════════════
 function makeRng(seed){
   let s=seed>>>0;
-  return ()=>{
-    s=(s+0x6D2B79F5)>>>0;
-    let t=Math.imul(s^(s>>>15),1|s);
-    t=(t+Math.imul(t^(t>>>7),61|t))^t;
-    return((t^(t>>>14))>>>0)/4294967296;
-  };
+  return()=>{s=(s+0x6D2B79F5)>>>0;let t=Math.imul(s^(s>>>15),1|s);
+    t=(t+Math.imul(t^(t>>>7),61|t))^t;return((t^(t>>>14))>>>0)/4294967296};
 }
-function shuffle(a,rng){
-  for(let i=a.length-1;i>0;i--){
-    const j=Math.floor(rng()*(i+1));
-    [a[i],a[j]]=[a[j],a[i]];
-  }
+function shuffleArr(a,rng){for(let i=a.length-1;i>0;i--){const j=Math.floor(rng()*(i+1));[a[i],a[j]]=[a[j],a[i]]}}
+
+// ═══════════════════════════════════════
+// TILE POOL (triples — 3 identical tiles clear)
+// ═══════════════════════════════════════
+function makePool(tileCount){
+  const pool=[];
+  const maxVal=tileCount<=54?6:9;
+  const tpv=Math.ceil((tileCount/3)/maxVal);
+  for(let v=1;v<=maxVal;v++)for(let t=0;t<tpv;t++){pool.push(v);pool.push(v);pool.push(v)}
+  while(pool.length>tileCount)pool.splice(pool.length-3,3);
+  return pool;
 }
 
-// ─────────────────────────────────────────────────
-// 3. Tile pools
-// ─────────────────────────────────────────────────
-function classicPool(ppv){
-  const p=[];
-  for(let v=1;v<=9;v++) for(let i=0;i<ppv*2;i++) p.push(v);
-  return p;
-}
-function mathPool36(){
-  const p=[];
-  for(let v=1;v<=9;v++) for(let i=0;i<4;i++) p.push(v);
-  return p;
-}
-function mathPool144(){
-  const p=[];
-  for(let v=1;v<=9;v++) for(let i=0;i<16;i++) p.push(v);
-  return p;
-}
-
-// ─────────────────────────────────────────────────
-// 4. Layout templates
-// ─────────────────────────────────────────────────
-function small36(){
+// ═══════════════════════════════════════
+// LAYOUTS — Vita Mahjong cross/hourglass
+// ═══════════════════════════════════════
+function parseLayout(layers){
   const s=[];
-  for(let y=0;y<5;y++) for(let x=0;x<4;x++) s.push(enc(x,y,0));
-  for(let y=0;y<4;y++) for(let x=0;x<3;x++) s.push(enc(x,y,1));
-  for(let y=0;y<2;y++) for(let x=0;x<2;x++) s.push(enc(x,y,2));
-  return s; // 20+12+4 = 36
-}
-function standard144(){
-  const s=[],seen=new Set();
-  const add=(x,y,z)=>{ const p=enc(x,y,z); if(!seen.has(p)){seen.add(p);s.push(p);} };
-  for(let y=0;y<5;y++) for(let x=0;x<12;x++) add(x,y,0); // 60
-  for(let y=0;y<4;y++) for(let x=1;x<=10;x++) add(x,y,1); // 40
-  for(let y=0;y<4;y++) for(let x=2;x<=9;x++)  add(x,y,2); // 32
-  for(let y=0;y<4;y++) for(let x=3;x<=5;x++)  add(x,y,3); // 12 → total 144
-  return s;
-}
-
-// ─────────────────────────────────────────────────
-// 5. Board Generator  (JS port of fixed BoardGenerator.cs)
-// ─────────────────────────────────────────────────
-function blockScore(pos,occ,free){
-  const{x,y,z}=dec(pos);
-  occ.add(pos);
-  const nb=affectedNeighbors(x,y,z);
-  let sc=0;
-  for(const n of nb){
-    if(!free.has(n))continue;
-    const d=dec(n);
-    if(!isFree(d.x,d.y,d.z,occ))sc++;
-  }
-  occ.delete(pos);
-  return sc;
-}
-// pairSafe: returns false if placing both ai AND aj would leave either tile
-// blocked at removal time. At removal, the partner is still on the board, so
-// we must verify isFree(ai, occ∪{aj}) and isFree(aj, occ∪{ai}).
-// Since both ai and aj are already in `free` (so their tops are clear and
-// at least one side is open w.r.t. current occ), the only failure cases are:
-//   • partner is directly above  → blocks the top
-//   • partner is left/right AND the opposite side is already occupied
-function pairSafe(ai,aj,occ){
-  const di=dec(ai),dj=dec(aj);
-  // does aj block ai?
-  if(enc(di.x,di.y,di.z+1)===aj)return false;
-  if(enc(di.x-1,di.y,di.z)===aj&&occ.has(enc(di.x+1,di.y,di.z)))return false;
-  if(enc(di.x+1,di.y,di.z)===aj&&occ.has(enc(di.x-1,di.y,di.z)))return false;
-  // does ai block aj?
-  if(enc(dj.x,dj.y,dj.z+1)===ai)return false;
-  if(enc(dj.x-1,dj.y,dj.z)===ai&&occ.has(enc(dj.x+1,dj.y,dj.z)))return false;
-  if(enc(dj.x+1,dj.y,dj.z)===ai&&occ.has(enc(dj.x-1,dj.y,dj.z)))return false;
-  return true;
-}
-function selectPair(free,occ,rng){
-  const arr=[...free];
-  shuffle(arr,rng);                    // different spatial sequence each retry
-  arr.sort((a,b)=>dec(a).z-dec(b).z); // prefer lower z-layers (stable within shuffle)
-  if(arr.length<2)return[-1,-1];
-  const cap=Math.min(arr.length,30);
-  // Precompute blockScores for fast path (avoids redundant calls in O(cap²) loop)
-  const sc=new Int8Array(cap);
-  for(let i=0;i<cap;i++) sc[i]=blockScore(arr[i],occ,free);
-  let bA=-1,bB=-1,bSc=127;
-  for(let i=0;i<cap;i++){
-    for(let j=i+1;j<cap;j++){
-      const s=sc[i]+sc[j];
-      if(s>=bSc)continue;
-      if(!pairSafe(arr[i],arr[j],occ))continue;
-      bSc=s;bA=arr[i];bB=arr[j];
-    }
-  }
-  // Fallback: if no safe pair in cap, scan ALL free tiles for any safe pair
-  if(bA<0){
-    for(let i=cap;i<arr.length;i++){
-      for(let j=i+1;j<arr.length;j++){
-        if(pairSafe(arr[i],arr[j],occ)){bA=arr[i];bB=arr[j];i=arr.length;break;}
+  for(let z=0;z<layers.length;z++){
+    const L=layers[z];
+    for(let y=0;y<L.length;y++){
+      for(let x=0;x<L[y].length;x++){
+        if(L[y][x]==='X')s.push(enc(x,y,z));
       }
     }
   }
-  return[bA,bB];
+  return s;
 }
-function swapRm(arr,i){ arr[i]=arr[arr.length-1]; arr.pop(); }
-function swapRmPair(arr,a,b){ const h=Math.max(a,b),l=Math.min(a,b); swapRm(arr,h); swapRm(arr,l); }
-function findComp(pool,mode,vA,skip){
-  for(let i=0;i<pool.length;i++){
-    if(i===skip)continue;
-    if(mode==='classic'?pool[i]===vA:pool[i]+vA===10)return i;
+
+function layoutBig(){
+  // Vita Mahjong cross/hourglass — 9 cols × 10 rows, 4 layers = 108 tiles
+  // L0=60, L1=30, L2=12, L3=6
+  const L0=[
+    ".XXXXXXX.",  // 7
+    ".XXXXXXX.",  // 7
+    "...XXX...",  // 3  (neck)
+    ".XXXXXXX.",  // 7
+    "XXXXXXXXX",  // 9
+    "XXXXXXXXX",  // 9
+    ".XXXXXXX.",  // 7
+    "..XXXXX..",  // 5
+    "...XXX...",  // 3
+    "...XXX...",  // 3
+  ];
+  const L1=[
+    "..XXXXX..",  // 5
+    "..XXXXX..",  // 5
+    ".........",  // 0
+    "..XXXXX..",  // 5
+    "..XXXXX..",  // 5
+    "..XXXXX..",  // 5
+    "..XXXXX..",  // 5
+    ".........",  // 0
+    ".........",  // 0
+    ".........",  // 0
+  ];
+  const L2=[
+    ".........",  // 0
+    ".........",  // 0
+    ".........",  // 0
+    "...XXX...",  // 3
+    "...XXX...",  // 3
+    "...XXX...",  // 3
+    "...XXX...",  // 3
+    ".........",  // 0
+    ".........",  // 0
+    ".........",  // 0
+  ];
+  const L3=[
+    ".........",  // 0
+    ".........",  // 0
+    ".........",  // 0
+    "....X....",  // 1
+    "...XXX...",  // 3
+    "....X....",  // 1
+    "....X....",  // 1
+    ".........",  // 0
+    ".........",  // 0
+    ".........",  // 0
+  ];
+  return parseLayout([L0,L1,L2,L3]);
+}
+
+function layoutSmall(){
+  // Small diamond — 7 cols × 5 rows, 3 layers = 36 tiles
+  // L0=21, L1=9, L2=6
+  const L0=[
+    "..XXX..",  // 3
+    ".XXXXX.",  // 5
+    ".XXXXX.",  // 5
+    ".XXXXX.",  // 5
+    "..XXX..",  // 3
+  ];
+  const L1=[
+    ".......",  // 0
+    "..XXX..",  // 3
+    "..XXX..",  // 3
+    "..XXX..",  // 3
+    ".......",  // 0
+  ];
+  const L2=[
+    ".......",  // 0
+    ".......",  // 0
+    "..XXX..",  // 3
+    "..XXX..",  // 3
+    ".......",  // 0
+  ];
+  return parseLayout([L0,L1,L2]);
+}
+
+// ═══════════════════════════════════════
+// BOARD GENERATOR (forward tear-down: start full, remove free triples)
+// ═══════════════════════════════════════
+function tryGen(slots,pool,rng){
+  // Start with full board — all positions occupied
+  const occ=new Set(slots);
+  const board=new Map();
+  const wp=[...pool];shuffleArr(wp,rng);
+  const solution=[];
+  while(occ.size>0){
+    // Find all free tiles on current board
+    const free=[];
+    for(const p of occ){const d=dec(p);if(isFree(d.x,d.y,d.z,occ))free.push(p)}
+    if(free.length<3)return null;
+    // Pick 3 random free tiles
+    shuffleArr(free,rng);
+    const triple=[free[0],free[1],free[2]];
+    // Assign next value group from shuffled pool
+    const val=wp[0];
+    let i2=-1,i3=-1;
+    for(let i=1;i<wp.length;i++){if(wp[i]===val){if(i2<0)i2=i;else{i3=i;break}}}
+    if(i3<0)return null;
+    const rm=[0,i2,i3].sort((a,b)=>b-a);
+    for(const idx of rm)wp.splice(idx,1);
+    // Assign value and remove tiles
+    for(const p of triple){board.set(p,val);occ.delete(p)}
+    solution.push(triple);
   }
-  return -1;
+  return{board,solution};
 }
-function placeTile(pos,val,occ,free,lset,board){
-  free.delete(pos); occ.add(pos); board.set(pos,val);
-  const{x,y,z}=dec(pos);
-  const nb=affectedNeighbors(x,y,z);
-  nb.push(enc(x,y,z+1)); // FIX 3 — evaluate z+1 neighbour
-  for(const n of nb){
-    if(!lset.has(n)||occ.has(n))continue; // FIX 2 — evaluate unoccupied too
-    const d=dec(n);
-    if(isFree(d.x,d.y,d.z,occ)) free.add(n); else free.delete(n);
-  }
-}
-function tryGen(slots,pool,mode,rng){
-  const lset=new Set(slots);
-  const occ=new Set(), free=new Set(slots); // FIX 1 — seed ALL positions
-  const wp=[...pool]; shuffle(wp,rng);
-  const board=new Map(), order=[];
-  while(wp.length>=2){
-    if(free.size<2)return null;
-    const[sA,sB]=selectPair(free,occ,rng);
-    if(sA<0||sA===sB)return null;
-    const vA=wp[0], iB=findComp(wp,mode,vA,0);
-    if(iB<0)return null;
-    const vB=wp[iB];
-    swapRmPair(wp,0,iB);
-    order.push([sA,sB]);
-    placeTile(sA,vA,occ,free,lset,board);
-    placeTile(sB,vB,occ,free,lset,board);
-  }
-  if(board.size!==slots.length)return null;
-  return{board, solution:[...order].reverse()};
-}
-async function generate(slots,pool,mode,seed,tries){
+
+async function generate(slots,pool,seed,tries){
   const rng=makeRng(seed);
   for(let i=0;i<tries;i++){
-    if(i%40===39) await new Promise(r=>setTimeout(r,0)); // yield to keep UI alive
-    const r=tryGen(slots,[...pool],mode,rng);
-    if(r)return r;
+    if(i%30===29)await new Promise(r=>setTimeout(r,0));
+    const r=tryGen(slots,[...pool],rng);if(r)return r;
   }
   return null;
 }
 
-// ─────────────────────────────────────────────────
-// 6. Solution validator  (O(N) — 100% accurate)
-// ─────────────────────────────────────────────────
-function verifySolution(board,solution,mode){
+function verifySolution(board,solution){
   const occ=new Set(board.keys());
-  for(const[pA,pB]of solution){
-    if(!occ.has(pA)||!occ.has(pB))return false;
-    const a=dec(pA),b=dec(pB);
-    if(!isFree(a.x,a.y,a.z,occ)||!isFree(b.x,b.y,b.z,occ))return false;
-    const vA=board.get(pA),vB=board.get(pB);
-    if(mode==='classic'?vA!==vB:vA+vB!==10)return false;
-    occ.delete(pA); occ.delete(pB);
+  for(const triple of solution){
+    for(const p of triple){
+      if(!occ.has(p))return false;
+      const d=dec(p);if(!isFree(d.x,d.y,d.z,occ))return false;
+    }
+    const vals=triple.map(p=>board.get(p));
+    if(vals[0]!==vals[1]||vals[1]!==vals[2])return false;
+    for(const p of triple)occ.delete(p);
   }
   return occ.size===0;
 }
 
-// ─────────────────────────────────────────────────
-// 7. Difficulty level table (15 levels, 5 axes)
-//    sz: 'small'=36 tiles | 'large'=144 tiles
-//    mode: 'classic' same value | 'math' sum=10
-//    hl: 'full' all free | 'partial' matchable only | 'none' hidden
-//    sh: shuffles (Infinity=unlimited)
-//    t: timer seconds (0=no timer)
-// ─────────────────────────────────────────────────
-const LEVELS=[
-  {sz:'small',mode:'classic',hl:'full',   sh:Infinity,t:0,   seed:42,    label:'Beginner'},
-  {sz:'small',mode:'classic',hl:'full',   sh:Infinity,t:0,   seed:137,   label:'Beginner'},
-  {sz:'small',mode:'classic',hl:'full',   sh:Infinity,t:0,   seed:256,   label:'Easy'},
-  {sz:'small',mode:'math',   hl:'full',   sh:Infinity,t:0,   seed:512,   label:'Easy'},
-  {sz:'small',mode:'math',   hl:'full',   sh:Infinity,t:0,   seed:777,   label:'Medium'},
-  {sz:'large',mode:'math',   hl:'full',   sh:3,        t:0,   seed:1024,  label:'Medium'},
-  {sz:'large',mode:'math',   hl:'partial',sh:3,        t:0,   seed:2048,  label:'Hard'},
-  {sz:'large',mode:'math',   hl:'partial',sh:2,        t:0,   seed:3141,  label:'Hard'},
-  {sz:'large',mode:'math',   hl:'partial',sh:2,        t:600, seed:4096,  label:'Expert'},
-  {sz:'large',mode:'math',   hl:'partial',sh:1,        t:540, seed:5000,  label:'Expert'},
-  {sz:'large',mode:'math',   hl:'none',   sh:1,        t:480, seed:6666,  label:'Master'},
-  {sz:'large',mode:'math',   hl:'none',   sh:1,        t:420, seed:7777,  label:'Master'},
-  {sz:'large',mode:'math',   hl:'none',   sh:0,        t:360, seed:8888,  label:'Grandmaster'},
-  {sz:'large',mode:'math',   hl:'none',   sh:0,        t:300, seed:9999,  label:'Grandmaster'},
-  {sz:'large',mode:'math',   hl:'none',   sh:0,        t:240, seed:12345, label:'Legend'},
-];
-
-// ─────────────────────────────────────────────────
-// 8. Rendering
-// ─────────────────────────────────────────────────
-const TS=54,ZDX=7,ZDY=9,PAD=22;
-const VCOL=[null,
-  '#e74c3c','#e67e22','#f1c40f','#2ecc71',
-  '#00cec9','#3498db','#a855f7','#e91e63','#fd79a8'
-];
-function tsp(x,y,z,mxZ){return{sx:PAD+x*TS+z*ZDX,sy:PAD+y*TS-z*ZDY+mxZ*ZDY};}
-function rr(ctx,x,y,w,h,r){
-  ctx.beginPath();
-  ctx.moveTo(x+r,y);ctx.lineTo(x+w-r,y);ctx.arcTo(x+w,y,x+w,y+r,r);
-  ctx.lineTo(x+w,y+h-r);ctx.arcTo(x+w,y+h,x+w-r,y+h,r);
-  ctx.lineTo(x+r,y+h);ctx.arcTo(x,y+h,x,y+h-r,r);
-  ctx.lineTo(x,y+r);ctx.arcTo(x,y,x+r,y,r);ctx.closePath();
-}
-function shade(hex,amt){
-  const n=parseInt(hex.replace('#',''),16);
-  const r=Math.max(0,Math.min(255,(n>>16)+amt));
-  const g=Math.max(0,Math.min(255,((n>>8)&255)+amt));
-  const b=Math.max(0,Math.min(255,(n&255)+amt));
-  return`rgb(${r},${g},${b})`;
-}
-function drawTile(ctx,sx,sy,val,st){
-  const TW=TS-2,TH=TS-2,BASE=VCOL[val]||'#888';
-  ctx.fillStyle=shade(BASE,-50);
-  rr(ctx,sx+3,sy+3,TW,TH,7);ctx.fill();
-  ctx.fillStyle=st==='blocked'?shade(BASE,-70):st==='sel'?shade(BASE,50):BASE;
-  rr(ctx,sx,sy,TW,TH,7);ctx.fill();
-  if(st==='sel'){
-    ctx.strokeStyle='#ffd700';ctx.lineWidth=2.5;
-    rr(ctx,sx,sy,TW,TH,7);ctx.stroke();
-  } else if(st==='free'){
-    ctx.strokeStyle='rgba(255,255,255,0.35)';ctx.lineWidth=1.2;
-    rr(ctx,sx,sy,TW,TH,7);ctx.stroke();
+// ═══════════════════════════════════════
+// SOUND SYSTEM
+// ═══════════════════════════════════════
+const SFX=(()=>{
+  let ctx=null;
+  function getCtx(){if(!ctx)ctx=new(window.AudioContext||window.webkitAudioContext)();return ctx}
+  function play(f,d,type='sine',vol=.12){
+    try{const c=getCtx(),o=c.createOscillator(),g=c.createGain();
+      o.type=type;o.frequency.setValueAtTime(f,c.currentTime);
+      g.gain.setValueAtTime(vol,c.currentTime);g.gain.exponentialRampToValueAtTime(.001,c.currentTime+d);
+      o.connect(g);g.connect(c.destination);o.start();o.stop(c.currentTime+d)}catch(e){}
   }
-  const alpha=st==='blocked'?0.22:0.95;
-  ctx.fillStyle=`rgba(255,255,255,${alpha})`;
-  ctx.font=`bold ${st==='blocked'?17:21}px 'Segoe UI',sans-serif`;
-  ctx.textAlign='center';ctx.textBaseline='middle';
-  ctx.fillText(val,sx+TW/2,sy+TH/2);
+  return{
+    tap(){play(520,.08)},
+    toTray(){play(440,.1);setTimeout(()=>play(550,.1),50)},
+    match(){play(660,.1);setTimeout(()=>play(880,.15),80);setTimeout(()=>play(1100,.1),160)},
+    noMatch(){play(200,.2,'sawtooth',.06)},
+    combo(n){play(660+n*30,.12);setTimeout(()=>play(800+n*30,.15,'triangle',.08),60)},
+    encourage(tier){const f=[600,700,850,1000,1200][tier]||600;play(f,.15,'triangle',.08);setTimeout(()=>play(f*1.25,.2,'triangle',.06),100)},
+    shuffle(){play(300,.15,'triangle',.06);setTimeout(()=>play(400,.12,'triangle',.06),80)},
+    hint(){play(880,.1,'sine',.08);setTimeout(()=>play(660,.1,'sine',.06),100)},
+    undo(){play(350,.1,'triangle',.06)},
+    win(){play(523,.2);setTimeout(()=>play(659,.2),150);setTimeout(()=>play(784,.3),300);setTimeout(()=>play(1047,.4),500)},
+    lose(){play(400,.3,'sawtooth',.06);setTimeout(()=>play(300,.4,'sawtooth',.05),200)},
+  };
+})();
+
+// ═══════════════════════════════════════
+// TWEEN ENGINE
+// ═══════════════════════════════════════
+const Ease={
+  linear:t=>t,
+  outQuad:t=>t*(2-t),
+  outCubic:t=>(--t)*t*t+1,
+  outBack:t=>{const c=1.7;return 1+(--t)*t*((c+1)*t+c)},
+  outElastic:t=>t===0?0:t===1?1:Math.pow(2,-10*t)*Math.sin((t-.075)*2*Math.PI/.3)+1,
+  inQuad:t=>t*t,
+};
+const Tweens={
+  _a:[],
+  add(o,p,d,e=Ease.outCubic,cb=null,delay=0){
+    const s={},tg={};for(const k in p){s[k]=o[k]!==undefined?o[k]:0;tg[k]=p[k]}
+    this._a.push({o,s,tg,d,e,cb,el:-delay,dead:false});
+  },
+  kill(o){this._a.forEach(t=>{if(t.o===o)t.dead=true})},
+  killAll(){this._a.length=0},
+  update(dt){
+    for(let i=this._a.length-1;i>=0;i--){
+      const t=this._a[i];if(t.dead){this._a.splice(i,1);continue}
+      t.el+=dt;if(t.el<0)continue;
+      const p=Math.min(1,t.el/t.d),ep=t.e(p);
+      for(const k in t.tg)t.o[k]=t.s[k]+(t.tg[k]-t.s[k])*ep;
+      if(p>=1){t.dead=true;if(t.cb)t.cb()}
+    }
+    this._a=this._a.filter(t=>!t.dead);
+  },
+  any(){return this._a.length>0}
+};
+
+// ═══════════════════════════════════════
+// PARTICLE SYSTEM
+// ═══════════════════════════════════════
+const Particles={
+  _l:[],
+  emit(x,y,n,col,opts={}){
+    const sp=opts.spread||80,life=opts.life||.8,spd=opts.speed||1,sz=opts.size||4;
+    for(let i=0;i<n;i++){
+      const a=Math.random()*Math.PI*2,v=(Math.random()*.6+.4)*sp*spd;
+      this._l.push({x,y,vx:Math.cos(a)*v,vy:Math.sin(a)*v-15,
+        life,ml:life,sz:sz*(Math.random()*.5+.75),col,g:opts.g||120,
+        rot:Math.random()*6.28,rs:(Math.random()-.5)*8,shape:opts.shape||'c'});
+    }
+  },
+  burst(x,y,val){
+    const c=VCOL[val]||'#888';
+    this.emit(x,y,12,c,{spread:100,life:.75,speed:1.2,g:180,shape:'r',size:5});
+    this.emit(x,y,8,'#ffd700',{spread:55,life:.5,speed:.7,g:80,size:2.5});
+    this.emit(x,y,4,'#fff',{spread:30,life:.35,speed:.4,g:40,size:3});
+  },
+  celebrate(w,h){
+    for(let i=0;i<5;i++)setTimeout(()=>{
+      const x=Math.random()*w,y=Math.random()*h*.4;
+      this.emit(x,y,20,'#ffd700',{spread:110,life:1.3,speed:1.1,g:100,size:4});
+      this.emit(x,y,12,'#ff6b6b',{spread:70,life:1,speed:.9,g:80,size:3});
+      this.emit(x,y,8,'#2ecc71',{spread:50,life:.8,speed:.7,g:60,size:3});
+    },i*180);
+  },
+  update(dt){
+    for(let i=this._l.length-1;i>=0;i--){
+      const p=this._l[i];p.life-=dt;if(p.life<=0){this._l.splice(i,1);continue}
+      p.vy+=p.g*dt;p.x+=p.vx*dt;p.y+=p.vy*dt;p.rot+=p.rs*dt;p.vx*=.98;
+    }
+  },
+  draw(c){
+    for(const p of this._l){
+      const a=Math.min(1,p.life/p.ml);
+      c.save();c.globalAlpha=a;c.translate(p.x,p.y);c.rotate(p.rot);c.fillStyle=p.col;
+      if(p.shape==='r')c.fillRect(-p.sz/2,-p.sz/2,p.sz,p.sz*.6);
+      else{c.beginPath();c.arc(0,0,p.sz/2,0,Math.PI*2);c.fill()}
+      c.restore();
+    }
+  },
+  any(){return this._l.length>0}
+};
+
+// ═══════════════════════════════════════
+// RENDERING CONSTANTS
+// ═══════════════════════════════════════
+const TS=46;
+const TW=TS-4;
+const TH=TS-4;
+const ZDX=7;
+const ZDY=9;
+const PAD=14;
+const SIDE_D=8;
+const SIDE_Z=2;
+const VCOL=[null,'#e74c3c','#e67e22','#f1c40f','#2ecc71','#00cec9','#3498db','#a855f7','#e91e63','#fd79a8'];
+
+function makeTileVis(pos,val){
+  const{x,y,z}=dec(pos);
+  return{pos,val,x,y,z,sx:0,sy:0,scale:1,opacity:1,offsetX:0,offsetY:0,rotation:0,glowAlpha:0,shakeX:0,removing:false,removed:false};
 }
 
-// ─────────────────────────────────────────────────
-// 9. Game state
-// ─────────────────────────────────────────────────
+// ─── Canvas helpers ───
+function rr(c,x,y,w,h,r){
+  c.beginPath();c.moveTo(x+r,y);c.lineTo(x+w-r,y);c.arcTo(x+w,y,x+w,y+r,r);
+  c.lineTo(x+w,y+h-r);c.arcTo(x+w,y+h,x+w-r,y+h,r);
+  c.lineTo(x+r,y+h);c.arcTo(x,y+h,x,y+h-r,r);c.lineTo(x,y+r);c.arcTo(x,y,x+r,y,r);c.closePath();
+}
+function maxXYZ(slots){
+  let mx=0,my=0,mz=0;
+  for(const p of slots){const d=dec(p);if(d.x>mx)mx=d.x;if(d.y>my)my=d.y;if(d.z>mz)mz=d.z}
+  return{mx,my,mz};
+}
+function tileSP(x,y,z,mz){
+  return{
+    sx: PAD + x*TS + z*ZDX,
+    sy: PAD + y*TS - z*ZDY + mz*ZDY
+  };
+}
+
+// ─── Draw single tile (Vita Mahjong 3D white card) ───
+function drawTile(c,tv,st,mz){
+  const sx=tv.sx+tv.offsetX+tv.shakeX, sy=tv.sy+tv.offsetY;
+  const dep=SIDE_D+tv.z*SIDE_Z;
+
+  c.save();
+  c.globalAlpha=tv.opacity;
+  c.translate(sx+TW/2, sy+TH/2);
+  c.scale(tv.scale, tv.scale);
+  c.rotate(tv.rotation);
+  c.translate(-TW/2, -TH/2);
+
+  // ── Drop shadow ──
+  c.fillStyle=`rgba(0,0,0,${.15+tv.z*.04})`;
+  rr(c, 4, 5, TW+2, TH+2, 7);
+  c.fill();
+
+  // ── 3D right side face ──
+  c.fillStyle='#a4b49c';
+  c.beginPath();
+  c.moveTo(TW, 4);
+  c.lineTo(TW+dep, 4-dep*.35);
+  c.lineTo(TW+dep, TH-dep*.35);
+  c.lineTo(TW, TH);
+  c.closePath();
+  c.fill();
+
+  // Right side highlight strip
+  c.fillStyle='#b8c8b0';
+  c.beginPath();
+  c.moveTo(TW, 4);
+  c.lineTo(TW+dep*.35, 4-dep*.12);
+  c.lineTo(TW+dep*.35, TH-dep*.12);
+  c.lineTo(TW, TH);
+  c.closePath();
+  c.fill();
+
+  // ── 3D bottom face ──
+  c.fillStyle='#8a9a82';
+  c.beginPath();
+  c.moveTo(4, TH);
+  c.lineTo(4+dep, TH-dep*.35);
+  c.lineTo(TW+dep, TH-dep*.35);
+  c.lineTo(TW, TH);
+  c.closePath();
+  c.fill();
+
+  // Bottom face highlight
+  c.fillStyle='#9aaa92';
+  c.beginPath();
+  c.moveTo(4, TH);
+  c.lineTo(4+dep*.4, TH-dep*.14);
+  c.lineTo(TW+dep*.4, TH-dep*.14);
+  c.lineTo(TW, TH);
+  c.closePath();
+  c.fill();
+
+  // ── Main tile face ──
+  let faceCol='#f0f4ec';
+  if(st==='blocked') faceCol='#c5cdc0';
+  else if(st==='sel') faceCol='#fffce6';
+  else if(st==='hint') faceCol='#e4ffe4';
+  rr(c, 0, 0, TW, TH, 7);
+  c.fillStyle=faceCol;
+  c.fill();
+
+  // ── Inner border (dark green, Vita Mahjong signature) ──
+  const bCol = st==='sel' ? '#d4a017' : st==='hint' ? '#2ecc71' : '#3d7d5d';
+  c.strokeStyle=bCol;
+  c.lineWidth = st==='sel' ? 2.5 : 2;
+  rr(c, 2.5, 2.5, TW-5, TH-5, 5);
+  c.stroke();
+
+  // ── Selection glow ──
+  if(st==='sel'){
+    c.shadowColor='#ffd700';c.shadowBlur=16;
+    c.strokeStyle='rgba(255,215,0,.35)';c.lineWidth=2;
+    rr(c,-2,-2,TW+4,TH+4,9);c.stroke();
+    c.shadowBlur=0;
+  }
+  if(tv.glowAlpha>0){
+    c.strokeStyle=`rgba(46,204,113,${tv.glowAlpha})`;c.lineWidth=2.5;
+    c.shadowColor='#2ecc71';c.shadowBlur=12*tv.glowAlpha;
+    rr(c,-2,-2,TW+4,TH+4,9);c.stroke();c.shadowBlur=0;
+  }
+
+  // ── Number ──
+  if(st==='blocked'){
+    c.fillStyle='rgba(61,125,93,.2)';
+    c.font="bold 14px 'Segoe UI',system-ui,sans-serif";
+  }else{
+    c.fillStyle='#2a5a3a';
+    c.font="bold 20px 'Segoe UI',system-ui,sans-serif";
+  }
+  c.textAlign='center';c.textBaseline='middle';
+  c.fillText(tv.val, TW/2, TH/2+1);
+
+  c.restore();
+}
+
+// ═══════════════════════════════════════
+// GAME STATE
+// ═══════════════════════════════════════
 const G={
   slots:[],origBoard:new Map(),curBoard:new Map(),
-  occ:new Set(),solution:[],sel:null,
-  mode:'classic',sz:'small',seed:42,
-  verified:false,pairs:0,won:false,noMoves:false,solving:false,
-  // Difficulty state
-  level:1,
-  shufflesLeft:Infinity,
-  highlightMode:'full',
-  timerHandle:null,
-  timeRemaining:0,
-  timedOut:false,
+  occ:new Set(),solution:[],
+  seed:42,verified:false,
+  triples:0,won:false,noMoves:false,solving:false,
+  level:1,shufflesLeft:3,
   _overlayCallback:null,
+  tileVis:new Map(),
+  combo:0,maxCombo:0,comboTimer:0,score:0,
+  holder:[],holderMax:7,
+  history:[],
+  hintPos:null,
 };
 
 const cv=document.getElementById('cv');
-const ctx=cv.getContext('2d');
+const ct=cv.getContext('2d');
+const pfxCv=document.getElementById('pfx');
+const pfxCt=pfxCv.getContext('2d');
 
-function maxXYZ(slots){
-  let mx=0,my=0,mz=0;
-  for(const p of slots){const d=dec(p);if(d.x>mx)mx=d.x;if(d.y>my)my=d.y;if(d.z>mz)mz=d.z;}
-  return{mx,my,mz};
+// ═══════════════════════════════════════
+// ENCOURAGE
+// ═══════════════════════════════════════
+const ENCOURAGE=[
+  {min:2,text:'Good!',color:'#2ecc71',tier:0},
+  {min:4,text:'Great!',color:'#3498db',tier:1},
+  {min:7,text:'Excellent!',color:'#a855f7',tier:2},
+  {min:10,text:'Amazing!',color:'#ffd700',tier:3},
+  {min:15,text:'UNBELIEVABLE!',color:'#ff6b00',tier:4},
+];
+function getEncourage(c){let b=null;for(const e of ENCOURAGE)if(c>=e.min)b=e;return b}
+function showEncourage(e){
+  const el=document.createElement('div');
+  el.className='encourage-popup';el.textContent=e.text;el.style.color=e.color;
+  document.getElementById('gameArea').appendChild(el);
+  setTimeout(()=>el.classList.add('fade'),700);
+  setTimeout(()=>el.remove(),1400);
+  SFX.encourage(e.tier);
 }
-function getPool(){
-  if(G.sz==='small')return G.mode==='math'?mathPool36():classicPool(2);
-  return G.mode==='math'?mathPool144():classicPool(8);
+function showFloatScore(sx,sy,pts){
+  const el=document.createElement('div');
+  el.className='float-score';el.textContent=`+${pts}`;
+  el.style.left=sx+'px';el.style.top=sy+'px';
+  document.getElementById('gameArea').appendChild(el);
+  setTimeout(()=>el.remove(),900);
 }
-function getSlots(){return G.sz==='small'?small36():standard144();}
+function addCombo(){
+  G.combo++;G.comboTimer=3;
+  if(G.combo>G.maxCombo)G.maxCombo=G.combo;
+  const pts=Math.round(100*(1+G.combo*.3));G.score+=pts;
+  const e=getEncourage(G.combo);
+  if(e&&G.combo===e.min)showEncourage(e);
+  if(G.combo>1)SFX.combo(G.combo);
+  document.getElementById('scoreDisplay').textContent=G.score;
+}
+function resetCombo(){G.combo=0;G.comboTimer=0}
 
-// ─────────────────────────────────────────────────
-// 10. Difficulty helpers
-// ─────────────────────────────────────────────────
-function fmtTime(s){
-  const m=Math.floor(s/60),r=s%60;
-  return`${m}:${r.toString().padStart(2,'0')}`;
+// ═══════════════════════════════════════
+// HOLDER TRAY LOGIC (3-match)
+// ═══════════════════════════════════════
+function renderHolder(){
+  const tray=document.getElementById('holderTray');
+  tray.innerHTML='';
+  for(let i=0;i<G.holderMax;i++){
+    const slot=document.createElement('div');
+    slot.className='holder-slot';
+    if(i<G.holder.length){
+      const item=G.holder[i];
+      slot.classList.add('filled');
+      const num=document.createElement('span');
+      num.className='holder-tile-num';
+      num.textContent=item.val;
+      num.style.color=VCOL[item.val]||'#2a5a3a';
+      slot.appendChild(num);
+    }
+    tray.appendChild(slot);
+  }
 }
 
-// Partial highlight: returns Set of free tiles that have at least one valid match partner
-function matchableTiles(freeSet,board,mode){
-  const matchable=new Set();
-  const fa=[...freeSet];
-  for(let i=0;i<fa.length;i++){
-    for(let j=i+1;j<fa.length;j++){
-      const vA=board.get(fa[i]),vB=board.get(fa[j]);
-      if(mode==='classic'?vA===vB:vA+vB===10){
-        matchable.add(fa[i]);
-        matchable.add(fa[j]);
-      }
+function addToHolder(pos,val){
+  // Insert sorted by value for easy triple spotting
+  let idx=0;
+  for(;idx<G.holder.length;idx++){
+    if(G.holder[idx].val>=val)break;
+  }
+  G.holder.splice(idx,0,{pos,val});
+  G.history.push({type:'add',pos,val,idx});
+  SFX.toTray();
+  renderHolder();
+  setTimeout(()=>checkHolderMatches(),200);
+}
+
+function checkHolderMatches(){
+  // Count occurrences of each value
+  const counts={};
+  for(let i=0;i<G.holder.length;i++){
+    const v=G.holder[i].val;
+    if(!counts[v])counts[v]=[];
+    counts[v].push(i);
+  }
+  // Find first triple
+  for(const val in counts){
+    if(counts[val].length>=3){
+      const matchIdx=counts[val].slice(0,3);
+      const tray=document.getElementById('holderTray');
+      const slots=tray.querySelectorAll('.holder-slot');
+      for(const idx of matchIdx)if(slots[idx])slots[idx].classList.add('matched');
+      SFX.match();
+      addCombo();
+      showFloatScore(140,0,Math.round(100*(1+G.combo*.3)));
+      setTimeout(()=>{
+        // Remove 3 (descending order)
+        const sorted=[...matchIdx].sort((a,b)=>b-a);
+        for(const idx of sorted)G.holder.splice(idx,1);
+        G.triples++;
+        renderHolder();
+        if((G.occ.size===0&&G.holder.length===0)||(G.occ.size<=2&&G.holder.length===0)){
+          // Win: board empty, or 1-2 tiles left (not enough for a triple) and holder clear
+          G.won=true;
+          // Auto-remove any remaining stragglers from board
+          for(const p of G.occ){const tv=G.tileVis.get(p);if(tv){tv.removed=true}};
+          G.occ.clear();G.curBoard.clear();
+          Particles.celebrate(cv.width,cv.height);
+          SFX.win();startAnimLoop();renderBoard();
+          setTimeout(levelComplete,1000);
+        }else if(G.holder.length>=3){
+          setTimeout(()=>checkHolderMatches(),150);
+        }else if(G.occ.size<=2&&G.holder.length<=2){
+          // Not enough tiles anywhere to form a triple — auto-win
+          G.won=true;
+          for(const p of G.occ){const tv=G.tileVis.get(p);if(tv){tv.removed=true}};
+          G.occ.clear();G.curBoard.clear();G.holder=[];
+          Particles.celebrate(cv.width,cv.height);
+          SFX.win();startAnimLoop();renderHolder();renderBoard();
+          setTimeout(levelComplete,1000);
+        }else if(G.occ.size===0&&G.holder.length>0){
+          G.noMoves=true;SFX.lose();
+          setTimeout(showGameOver,400);
+        }
+        updateUI();
+      },350);
+      return;
     }
   }
-  return matchable;
+  // No triple found
+  // Check if remaining board+holder tiles can't possibly form a triple
+  const totalLeft=G.occ.size+G.holder.length;
+  if(totalLeft>0&&totalLeft<3){
+    // Not enough tiles anywhere for a triple — auto-win
+    G.won=true;
+    for(const p of G.occ){const tv=G.tileVis.get(p);if(tv){tv.removed=true}};
+    G.occ.clear();G.curBoard.clear();G.holder=[];
+    Particles.celebrate(cv.width,cv.height);
+    SFX.win();startAnimLoop();renderHolder();renderBoard();
+    setTimeout(levelComplete,1000);
+    return;
+  }
+  if(G.holder.length>=G.holderMax){
+    G.noMoves=true;SFX.lose();
+    renderBoard();
+    setTimeout(showGameOver,400);
+  }
 }
 
-// Reviewer fix: never call newGame() from timer — set flag only
-function startTimer(seconds){
-  clearInterval(G.timerHandle);
-  G.timerHandle=null;
-  G.timeRemaining=seconds;
-  document.getElementById('timerStat').style.display='';
-  updateStats();
-  G.timerHandle=setInterval(()=>{
-    if(G.won||G.timedOut){clearInterval(G.timerHandle);G.timerHandle=null;return;}
-    G.timeRemaining=Math.max(0,G.timeRemaining-1);
-    updateStats();
-    if(G.timeRemaining===0){
-      clearInterval(G.timerHandle);G.timerHandle=null;
-      G.timedOut=true;
-      msg('⏱ Time Up! Game Over.','err');
-      render();
+// ═══════════════════════════════════════
+// UNDO
+// ═══════════════════════════════════════
+function doUndo(){
+  if(G.won||G.solving)return;
+  if(G.history.length===0){msg('Nothing to undo','warn-c');return}
+  const last=G.history.pop();
+  if(last.type==='add'){
+    const idx=G.holder.findIndex(h=>h.pos===last.pos);
+    if(idx>=0)G.holder.splice(idx,1);
+    G.curBoard.set(last.pos,last.val);
+    G.occ.add(last.pos);
+    const tv=G.tileVis.get(last.pos);
+    if(tv){tv.removed=false;tv.removing=false;tv.scale=1;tv.opacity=1;tv.offsetY=0}
+    G.noMoves=false;
+    renderHolder();renderBoard();updateUI();
+    SFX.undo();msg('Undo!','ok');
+  }
+}
+
+// ═══════════════════════════════════════
+// GAME OVER POPUP
+// ═══════════════════════════════════════
+function showGameOver(){
+  // Render current tray tiles in popup
+  const tray=document.getElementById('goTray');
+  tray.innerHTML='';
+  for(const item of G.holder){
+    const tile=document.createElement('div');
+    tile.className='go-tile';
+    tile.style.color=VCOL[item.val]||'#2a5a3a';
+    tile.textContent=item.val;
+    tray.appendChild(tile);
+  }
+  document.getElementById('goReviveBadge').textContent=G.revives||5;
+  document.getElementById('gameOverPopup').classList.add('show');
+}
+function hideGameOver(){
+  document.getElementById('gameOverPopup').classList.remove('show');
+}
+function doRevive(){
+  // Remove 3 tiles from tray (most recently added) and put back on board
+  if(G.holder.length===0){hideGameOver();return}
+  hideGameOver();
+  G.noMoves=false;
+  // Put back up to 3 tiles from the end of the holder
+  const toReturn=Math.min(3,G.holder.length);
+  for(let i=0;i<toReturn;i++){
+    const item=G.holder.pop();
+    G.curBoard.set(item.pos,item.val);
+    G.occ.add(item.pos);
+    const tv=G.tileVis.get(item.pos);
+    if(tv){tv.removed=false;tv.removing=false;tv.scale=0;tv.opacity=0;tv.offsetY=-20;
+      Tweens.add(tv,{scale:1,opacity:1,offsetY:0},.35,Ease.outBack)}
+  }
+  renderHolder();renderBoard();updateUI();startAnimLoop();
+  SFX.shuffle();
+  msg('Revived! Keep going!','ok');
+}
+function doGameOverRestart(){
+  hideGameOver();
+  restartLevel();
+}
+
+// ═══════════════════════════════════════
+// HINT
+// ═══════════════════════════════════════
+function doHint(){
+  if(G.won||G.noMoves||G.solving)return;
+  const free=freeTiles();
+  // Count values in holder
+  const hc={};
+  for(const h of G.holder)hc[h.val]=(hc[h.val]||0)+1;
+  // Best: free tile where holder already has 2 of same value
+  for(const p of free){
+    const v=G.curBoard.get(p);
+    if((hc[v]||0)>=2){highlightHint(p);SFX.hint();return}
+  }
+  // Good: free tile where holder has 1 and another free tile has same value
+  for(const p of free){
+    const v=G.curBoard.get(p);
+    if((hc[v]||0)>=1){
+      let freeCount=0;
+      for(const q of free)if(G.curBoard.get(q)===v)freeCount++;
+      if(freeCount+(hc[v]||0)>=3){highlightHint(p);SFX.hint();return}
     }
-  },1000);
-}
-
-function syncButtons(){
-  document.getElementById('bCl').className=G.mode==='classic'?'on':'';
-  document.getElementById('bMa').className=G.mode==='math'?'on':'';
-  document.getElementById('bSm').className=G.sz==='small'?'on':'';
-  document.getElementById('bLg').className=G.sz==='large'?'on':'';
-}
-
-// loadLevel: full reset for a new level
-function loadLevel(n){
-  const cfg=LEVELS[n-1];
-  G.level=n;
-  G.sz=cfg.sz;
-  G.mode=cfg.mode;
-  G.highlightMode=cfg.hl;
-  G.shufflesLeft=cfg.sh;
-  syncButtons();
-  document.getElementById('si').value=cfg.seed;
-  newGame();
-}
-
-// restartLevel: reset current level (bound to "New Game" button)
-function restartLevel(){
-  loadLevel(G.level);
-}
-
-// showOverlay: level-complete / game-over screen
-function showOverlay(title,sub,detail,btnLabel,cb){
-  document.getElementById('ovTitle').textContent=title;
-  document.getElementById('ovSub').textContent=sub;
-  document.getElementById('ovDetail').textContent=detail||'';
-  document.getElementById('ovBtn').textContent=btnLabel||'Next Level ▶';
-  G._overlayCallback=cb;
-  document.getElementById('overlay').classList.add('show');
-}
-function onOverlayBtn(){
-  document.getElementById('overlay').classList.remove('show');
-  if(G._overlayCallback)G._overlayCallback();
-  G._overlayCallback=null;
-}
-
-function levelComplete(){
-  clearInterval(G.timerHandle);G.timerHandle=null;
-  const cfg=LEVELS[G.level-1];
-  const next=G.level+1;
-  if(next>LEVELS.length){
-    showOverlay(
-      '🏆 All 15 Levels Complete!',
-      'You\'ve mastered Vita Mahjong Number!',
-      'Reverse-generation algorithm: undefeated.',
-      'Play Again',
-      ()=>loadLevel(1)
-    );
-    return;
   }
-  const ncfg=LEVELS[next-1];
-  const changes=[];
-  if(ncfg.sz!==cfg.sz)changes.push('Larger board (144 tiles)');
-  if(ncfg.mode!==cfg.mode)changes.push('Math Mode unlocked');
-  if(ncfg.hl==='partial'&&cfg.hl==='full')changes.push('Hints reduced');
-  if(ncfg.hl==='none'&&cfg.hl!=='none')changes.push('Hints removed');
-  if(ncfg.sh<cfg.sh&&cfg.sh!==Infinity)changes.push(`Shuffles: ${ncfg.sh}`);
-  if(ncfg.sh!==Infinity&&cfg.sh===Infinity)changes.push(`Shuffles: ${ncfg.sh}`);
-  if(ncfg.t>0&&cfg.t===0)changes.push('⏱ Timer added');
-  else if(ncfg.t<cfg.t&&ncfg.t>0)changes.push(`⏱ Timer: ${fmtTime(ncfg.t)}`);
-  showOverlay(
-    `Level ${G.level} Complete! 🎉`,
-    `Next: Level ${next} — ${ncfg.label}`,
-    changes.length?`Incoming: ${changes.join(' · ')}` : '',
-    `Level ${next} ▶`,
-    ()=>loadLevel(next)
-  );
-}
-
-// ─────────────────────────────────────────────────
-// 11. Mode / layout toggles (manual player controls)
-// ─────────────────────────────────────────────────
-// Reviewer fix: route through setLayout/setMode so buttons stay in sync
-function setMode(m){
-  G.mode=m;
-  document.getElementById('bCl').className=m==='classic'?'on':'';
-  document.getElementById('bMa').className=m==='math'?'on':'';
-  newGame();
-}
-function setLayout(s){
-  G.sz=s;
-  document.getElementById('bSm').className=s==='small'?'on':'';
-  document.getElementById('bLg').className=s==='large'?'on':'';
-  newGame();
-}
-function rndSeed(){
-  const s=Math.floor(Math.random()*999999);
-  document.getElementById('si').value=s;
-  G.seed=s;newGame();
-}
-
-// ─────────────────────────────────────────────────
-// 12. newGame — regenerate board, keep current level/shuffles
-// ─────────────────────────────────────────────────
-async function newGame(){
-  // Reviewer fix: clear timer first, reset verified early
-  clearInterval(G.timerHandle);G.timerHandle=null;
-  G.timedOut=false;
-  G.verified=false;
-  G.solving=false;
-
-  const sv=parseInt(document.getElementById('si').value)||42;
-  G.seed=sv;G.sel=null;G.pairs=0;G.won=false;G.noMoves=false;
-  msg('Generating board…','warn-c');
-
-  G.slots=getSlots();
-  const pool=getPool();
-  // selectPair now uses RNG + strict-layer enforcement (no maxCands needed).
-  // Each retry explores a genuinely different spatial sequence.
-  const tries=G.sz==='small'?80:200;
-
-  // Yield to browser so "Generating…" message renders before heavy work
-  await new Promise(r=>setTimeout(r,15));
-
-  // Try configured seed, fall back up to 9 more seeds if needed.
-  // Each attempt yields to the event loop so the UI never freezes.
-  let result=null, actualSeed=sv;
-  for(let attempt=0;attempt<10;attempt++){
-    result=await generate(G.slots,pool,G.mode,sv+attempt,tries);
-    if(result){actualSeed=sv+attempt;break;}
-    await new Promise(r=>setTimeout(r,0)); // keep browser responsive
+  // Fallback: any tile from solution
+  for(const triple of G.solution){
+    for(const p of triple){
+      if(G.occ.has(p)&&free.has(p)){highlightHint(p);SFX.hint();return}
+    }
   }
-
-  if(!result){
-    msg(`Generation FAILED on seeds ${sv}–${sv+9}. Try a different seed.`,'err');
-    document.getElementById('sVer').textContent='✗';
-    document.getElementById('sVer').style.color='#ff6b6b';
-    return;
-  }
-  if(actualSeed!==sv) document.getElementById('si').value=actualSeed;
-
-  G.verified=verifySolution(result.board,result.solution,G.mode);
-  G.origBoard=new Map(result.board);
-  G.curBoard =new Map(result.board);
-  G.occ      =new Set(result.board.keys());
-  G.solution =result.solution;
-
-  const sv2=document.getElementById('sVer');
-  if(G.verified){
-    sv2.textContent='✓';sv2.style.color='#1dd1a1';
-    msg(`Level ${G.level} ready ✓ — ${result.solution.length} pairs (seed ${sv})`,'ok');
-  } else {
-    sv2.textContent='✗';sv2.style.color='#ff6b6b';
-    msg('⚠ SOLUTION VALIDATION FAILED — algorithm bug!','err');
-  }
-
-  // Update difficulty UI
-  const cfg=LEVELS[G.level-1]||LEVELS[LEVELS.length-1];
-  document.getElementById('levelBadge').textContent=`Level ${G.level} — ${cfg.label}`;
-  document.getElementById('sLvl').textContent=G.level;
-  document.getElementById('sSh').textContent=G.shufflesLeft===Infinity?'∞':G.shufflesLeft;
-  document.getElementById('btnSh').disabled=(G.shufflesLeft===0);
-
-  // Timer
-  if(cfg.t>0){
-    startTimer(cfg.t);
-  } else {
-    document.getElementById('timerStat').style.display='none';
-    G.timeRemaining=0;
-  }
-
-  // Hint tip text
-  const htip=cfg.hl==='none'
-    ?'<b style="color:#ff6b6b">No hints</b> — free tiles are not highlighted. All difficulty, no safety net.'
-    :cfg.hl==='partial'
-    ?'<b style="color:#feca57">Partial hints</b> — only tiles with a valid match partner are highlighted.'
-    :'Click a <b style="color:#1dd1a1">free tile</b> (bright) to select, then click a matching tile.';
-  document.getElementById('tipText').innerHTML=
-    htip+' Every board is <b style="color:#ffd700">mathematically guaranteed solvable</b>.';
-
-  resize();render();updateStats();buildLegend();
+  msg('No hint available','warn-c');
+}
+function highlightHint(pos){
+  const tv=G.tileVis.get(pos);
+  if(!tv)return;
+  tv.glowAlpha=0;
+  Tweens.add(tv,{glowAlpha:1},0.3,Ease.outQuad,()=>{
+    setTimeout(()=>Tweens.add(tv,{glowAlpha:0},0.5,Ease.outQuad),800);
+  });
+  startAnimLoop();
 }
 
-// ─────────────────────────────────────────────────
-// 13. Gameplay
-// ─────────────────────────────────────────────────
-function freeTiles(){
-  const f=new Set();
-  for(const p of G.occ){const d=dec(p);if(isFree(d.x,d.y,d.z,G.occ))f.add(p);}
-  return f;
-}
-function hasValidPair(){
-  const free=[...freeTiles()];
-  for(let i=0;i<free.length;i++)for(let j=i+1;j<free.length;j++){
-    const vA=G.curBoard.get(free[i]),vB=G.curBoard.get(free[j]);
-    if(G.mode==='classic'?vA===vB:vA+vB===10)return true;
-  }
-  return false;
-}
-function removePair(pA,pB){
-  G.occ.delete(pA);G.occ.delete(pB);
-  G.curBoard.delete(pA);G.curBoard.delete(pB);
-  G.pairs++;
-}
-
+// ═══════════════════════════════════════
+// TILE CLICK → ADD TO TRAY
+// ═══════════════════════════════════════
 function onTileClick(pos){
-  if(G.won||G.noMoves||G.solving||G.timedOut)return;
+  if(G.won||G.noMoves||G.solving)return;
   const d=dec(pos);
   if(!isFree(d.x,d.y,d.z,G.occ))return;
-
-  if(G.sel===null){G.sel=pos;}
-  else if(G.sel===pos){G.sel=null;}
-  else{
-    const vA=G.curBoard.get(G.sel),vB=G.curBoard.get(pos);
-    const match=G.mode==='classic'?vA===vB:vA+vB===10;
-    if(match){
-      removePair(G.sel,pos);G.sel=null;
-      if(G.occ.size===0){
-        G.won=true;
-        clearInterval(G.timerHandle);G.timerHandle=null;
-        setTimeout(levelComplete,500);
-      } else if(!hasValidPair()){
-        G.noMoves=true;
-        if(G.shufflesLeft>0){
-          msg(`No pairs left — use Shuffle (${G.shufflesLeft===Infinity?'∞':G.shufflesLeft} left).`,'warn-c');
-        } else {
-          msg('No valid pairs and no shuffles left — press New Game to retry.','err');
-        }
-      } else {
-        msg(`${G.mode==='math'?`${vA} + ${vB} = 10`:`${vA} = ${vA} ✓`}`,'ok');
-      }
-    } else {
-      msg(`${G.mode==='math'?`${vA} + ${vB} ≠ 10`:`${vA} ≠ ${vB}`} — try again`,'warn-c');
-      G.sel=pos;
-    }
+  if(G.holder.length>=G.holderMax){
+    const val=G.curBoard.get(pos);
+    // Would this complete a triple?
+    let count=0;
+    for(const h of G.holder)if(h.val===val)count++;
+    if(count<2){msg('Holder full!','err');SFX.noMatch();return}
   }
-  render();updateStats();
-}
-
-function doShuffle(){
-  if(G.timedOut||G.won)return;
-  if(G.shufflesLeft===0){msg('No shuffles remaining!','err');return;}
-  if(G.shufflesLeft!==Infinity)G.shufflesLeft--;
-  // New random seed, same level config (shuffles already decremented — newGame won't reset)
-  const newSeed=Math.floor(Math.random()*999999);
-  document.getElementById('si').value=newSeed;
-  G.noMoves=false;
-  newGame();
-}
-
-// ─────────────────────────────────────────────────
-// 14. Auto-solve (reviewer fix: clears timer, uses G.solving guard)
-// ─────────────────────────────────────────────────
-async function autoSolve(){
-  if(G.solving||G.won||G.timedOut)return;
-  if(!G.verified){msg('Cannot auto-solve: solution not verified','err');return;}
-  G.solving=true;G.sel=null;
-  // Pause timer during auto-solve (reviewer: avoid setInterval/async race)
-  clearInterval(G.timerHandle);G.timerHandle=null;
-  msg('Auto-solving…','warn-c');
-  for(const[pA,pB]of G.solution){
-    if(!G.solving)break; // newGame() sets solving=false → clean exit
-    if(!G.occ.has(pA)||!G.occ.has(pB))continue;
-    G.sel=pA;render();updateStats();
-    await sleep(90);
-    removePair(pA,pB);G.sel=null;render();updateStats();
-    await sleep(90);
+  const val=G.curBoard.get(pos);
+  SFX.tap();
+  const tv=G.tileVis.get(pos);
+  if(tv){
+    tv.removing=true;
+    Particles.burst(tv.sx+TW/2, tv.sy+TH/2, val);
+    Tweens.add(tv,{scale:0,opacity:0,offsetY:-15},0.25,Ease.inQuad,()=>{tv.removed=true});
+    startAnimLoop();
   }
-  G.solving=false;
-  if(G.occ.size===0){
-    G.won=true;
-    setTimeout(levelComplete,500);
-  } else {
-    msg('Auto-solve finished (some pairs already removed manually)','ok');
-  }
-  render();updateStats();
+  G.occ.delete(pos);
+  G.curBoard.delete(pos);
+  setTimeout(()=>addToHolder(pos,val),150);
+  renderBoard();updateUI();
 }
-function sleep(ms){return new Promise(r=>setTimeout(r,ms));}
 
-// ─────────────────────────────────────────────────
-// 15. Canvas rendering
-// ─────────────────────────────────────────────────
-function resize(){
-  const{mx,my,mz}=maxXYZ(G.slots);
-  cv.width =PAD*2+(mx+1)*TS+mz*ZDX+3;
-  cv.height=PAD*2+(my+1)*TS+mz*ZDY+3;
+// ═══════════════════════════════════════
+// ANIMATION LOOP
+// ═══════════════════════════════════════
+let lastTime=0,animRunning=false;
+function gameLoop(time){
+  const dt=Math.min(.05,((time||0)-lastTime)/1000);lastTime=time||0;
+  Tweens.update(dt);Particles.update(dt);
+  if(G.comboTimer>0){G.comboTimer-=dt;if(G.comboTimer<=0)resetCombo()}
+  renderBoard();
+  pfxCt.clearRect(0,0,pfxCv.width,pfxCv.height);Particles.draw(pfxCt);
+  if(Tweens.any()||Particles.any()||G.comboTimer>0)requestAnimationFrame(gameLoop);
+  else animRunning=false;
 }
-function render(){
-  ctx.clearRect(0,0,cv.width,cv.height);
-  ctx.fillStyle='#0a0518';ctx.fillRect(0,0,cv.width,cv.height);
+function startAnimLoop(){if(!animRunning){animRunning=true;lastTime=performance.now();requestAnimationFrame(gameLoop)}}
+
+// ═══════════════════════════════════════
+// RENDER BOARD
+// ═══════════════════════════════════════
+function renderBoard(){
+  ct.clearRect(0,0,cv.width,cv.height);
+
+  // ── Rich teal gradient background ──
+  const bg=ct.createRadialGradient(cv.width/2,cv.height*.45,0,cv.width/2,cv.height*.45,cv.width*.9);
+  bg.addColorStop(0,'#1c8d76');
+  bg.addColorStop(0.4,'#177a66');
+  bg.addColorStop(0.7,'#126858');
+  bg.addColorStop(1,'#0d5448');
+  ct.fillStyle=bg;
+  ct.fillRect(0,0,cv.width,cv.height);
+
+  // ── Subtle decorative texture ──
+  ct.save();
+  ct.globalAlpha=.018;
+  ct.strokeStyle='#fff';ct.lineWidth=1;
+  for(let i=0;i<cv.width+cv.height;i+=40){
+    ct.beginPath();ct.moveTo(i,0);ct.lineTo(i-cv.height,cv.height);ct.stroke();
+  }
+  for(let i=0;i<cv.width+cv.height;i+=40){
+    ct.beginPath();ct.moveTo(-cv.height+i,0);ct.lineTo(i,cv.height);ct.stroke();
+  }
+  ct.restore();
+
+  // ── Vignette overlay ──
+  const vig=ct.createRadialGradient(cv.width/2,cv.height/2,cv.width*.25,cv.width/2,cv.height/2,cv.width*.85);
+  vig.addColorStop(0,'rgba(0,0,0,0)');
+  vig.addColorStop(1,'rgba(0,0,0,.12)');
+  ct.fillStyle=vig;
+  ct.fillRect(0,0,cv.width,cv.height);
+
   const{mz}=maxXYZ(G.slots);
   const free=freeTiles();
-  // Compute matchable set only when needed (partial highlight)
-  const matchable=G.highlightMode==='partial'
-    ?matchableTiles(free,G.curBoard,G.mode):null;
 
-  const vis=[...G.slots].filter(p=>G.occ.has(p));
-  vis.sort((a,b)=>{
-    const za=dec(a).z,zb=dec(b).z;
-    if(za!==zb)return za-zb;
-    return dec(a).y-dec(b).y;
-  });
-  for(const p of vis){
-    const{x,y,z}=dec(p);
-    const{sx,sy}=tsp(x,y,z,mz);
-    const val=G.curBoard.get(p);
-    let st;
-    if(p===G.sel)               st='sel';
-    else if(G.highlightMode==='none')   st='blocked';
-    else if(G.highlightMode==='partial')st=(matchable&&matchable.has(p))?'free':'blocked';
-    else                        st=free.has(p)?'free':'blocked';
-    drawTile(ctx,sx,sy,val,st);
+  // Sort tiles: bottom layer first, then top-to-bottom, left-to-right
+  const vis=[...G.tileVis.values()].filter(tv=>!tv.removed&&G.occ.has(tv.pos));
+  vis.sort((a,b)=>a.z!==b.z?a.z-b.z:a.y!==b.y?a.y-b.y:a.x-b.x);
+
+  for(const tv of vis){
+    const sp=tileSP(tv.x,tv.y,tv.z,mz);tv.sx=sp.sx;tv.sy=sp.sy;
+  }
+
+  for(const tv of vis){
+    let st=free.has(tv.pos)?'free':'blocked';
+    drawTile(ct,tv,st,mz);
   }
 }
+
+function freeTiles(){
+  const f=new Set();
+  for(const p of G.occ){const d=dec(p);if(isFree(d.x,d.y,d.z,G.occ))f.add(p)}
+  return f;
+}
+
+// ── Canvas click handler ──
 cv.addEventListener('click',e=>{
   const rect=cv.getBoundingClientRect();
-  const cx=e.clientX-rect.left,cy=e.clientY-rect.top;
+  const scX=cv.width/rect.width,scY=cv.height/rect.height;
+  const cx=(e.clientX-rect.left)*scX,cy=(e.clientY-rect.top)*scY;
   const{mz}=maxXYZ(G.slots);
-  const vis=[...G.slots].filter(p=>G.occ.has(p));
-  vis.sort((a,b)=>dec(b).z-dec(a).z); // highest z first for hit test
-  for(const p of vis){
-    const{x,y,z}=dec(p);
-    const{sx,sy}=tsp(x,y,z,mz);
-    if(cx>=sx&&cx<sx+TS-2&&cy>=sy&&cy<sy+TS-2){onTileClick(p);return;}
+  const vis=[...G.tileVis.values()].filter(tv=>!tv.removed&&G.occ.has(tv.pos));
+  vis.sort((a,b)=>b.z-a.z);
+  for(const tv of vis){
+    const sp=tileSP(tv.x,tv.y,tv.z,mz);
+    if(cx>=sp.sx&&cx<sp.sx+TW&&cy>=sp.sy&&cy<sp.sy+TH){onTileClick(tv.pos);return}
   }
 });
 
-function updateStats(){
-  document.getElementById('sRem').textContent=G.occ.size;
-  document.getElementById('sPairs').textContent=G.pairs;
-  document.getElementById('sFree').textContent=freeTiles().size;
-  document.getElementById('sSh').textContent=G.shufflesLeft===Infinity?'∞':G.shufflesLeft;
-  if(G.timeRemaining>0){
-    const el=document.getElementById('sTime');
-    el.textContent=fmtTime(G.timeRemaining);
-    el.className='sv'+(G.timeRemaining<=30?' crit':G.timeRemaining<=60?' warn':'');
+// ═══════════════════════════════════════
+// TILE ENTER ANIMATION
+// ═══════════════════════════════════════
+function animateTileEnter(){
+  const tiles=[...G.tileVis.values()];
+  tiles.sort((a,b)=>a.z!==b.z?a.z-b.z:a.y!==b.y?a.y-b.y:a.x-b.x);
+  tiles.forEach((tv,i)=>{
+    tv.scale=0;tv.opacity=0;tv.offsetY=-30-tv.z*18;
+    Tweens.add(tv,{scale:1,opacity:1,offsetY:0},.4,Ease.outBack,null,i*.018+tv.z*.07);
+  });
+  startAnimLoop();
+}
+
+// ═══════════════════════════════════════
+// UI UPDATES
+// ═══════════════════════════════════════
+function updateUI(){
+  document.getElementById('scoreDisplay').textContent=G.score;
+  document.getElementById('shuffleBadge').textContent=G.shufflesLeft===Infinity?'Free':`×${G.shufflesLeft}`;
+}
+function msg(t,c){const el=document.getElementById('msg');el.textContent=t;el.className=c||'ok'}
+
+// ═══════════════════════════════════════
+// LEVELS
+// ═══════════════════════════════════════
+const LEVELS=[
+  {layout:'small',seed:42,label:'Beginner',sh:3},
+  {layout:'small',seed:137,label:'Beginner',sh:3},
+  {layout:'small',seed:256,label:'Easy',sh:3},
+  {layout:'small',seed:512,label:'Easy',sh:3},
+  {layout:'big',seed:777,label:'Medium',sh:2},
+  {layout:'big',seed:1024,label:'Medium',sh:2},
+  {layout:'big',seed:2048,label:'Hard',sh:2},
+  {layout:'big',seed:3141,label:'Hard',sh:1},
+  {layout:'big',seed:4096,label:'Expert',sh:1},
+  {layout:'big',seed:5000,label:'Expert',sh:1},
+  {layout:'big',seed:6666,label:'Master',sh:0},
+  {layout:'big',seed:7777,label:'Master',sh:0},
+  {layout:'big',seed:8888,label:'Grandmaster',sh:0},
+  {layout:'big',seed:9999,label:'Grandmaster',sh:0},
+  {layout:'big',seed:12345,label:'Legend',sh:0},
+];
+
+function loadLevel(n){
+  const cfg=LEVELS[n-1];G.level=n;
+  G.shufflesLeft=cfg.sh;G.seed=cfg.seed;
+  document.getElementById('si').value=cfg.seed;
+  newGame(cfg.layout);
+}
+function restartLevel(){loadLevel(G.level)}
+
+// ═══════════════════════════════════════
+// LEVEL SWITCHER DRAWER
+// ═══════════════════════════════════════
+function openLvlDrawer(){
+  const grid=document.getElementById('lvlGrid');
+  grid.innerHTML='';
+  LEVELS.forEach((cfg,i)=>{
+    const n=i+1;
+    const chip=document.createElement('div');
+    chip.className='lvl-chip'+(G.level===n?' current':'');
+    chip.innerHTML=`<span class="lvl-chip-num">${n}</span><span class="lvl-chip-lbl">${cfg.label}</span>`;
+    chip.onclick=()=>{closeLvlDrawer();loadLevel(n)};
+    grid.appendChild(chip);
+  });
+  document.getElementById('lvlDrawer').classList.add('open');
+}
+function closeLvlDrawer(e){
+  if(!e||e.target===document.getElementById('lvlDrawer'))
+    document.getElementById('lvlDrawer').classList.remove('open');
+}
+function rndSeed(){document.getElementById('si').value=Math.floor(Math.random()*999999);newGame()}
+
+// ═══════════════════════════════════════
+// SHUFFLE
+// ═══════════════════════════════════════
+function doShuffle(){
+  if(G.won||G.solving)return;
+  if(G.shufflesLeft<=0){msg('No shuffles!','err');return}
+  G.shufflesLeft--;SFX.shuffle();
+  const tiles=[...G.tileVis.values()].filter(tv=>!tv.removed&&G.occ.has(tv.pos));
+  tiles.forEach(tv=>{
+    tv.offsetX=(Math.random()-.5)*50;tv.offsetY=(Math.random()-.5)*30;
+    tv.rotation=(Math.random()-.5)*.2;tv.scale=.85;
+  });
+  startAnimLoop();
+  setTimeout(()=>{
+    const seed=Math.floor(Math.random()*999999);
+    document.getElementById('si').value=seed;
+    G.noMoves=false;newGame();
+  },300);
+}
+
+// ═══════════════════════════════════════
+// AUTO-SOLVE (dev only)
+// ═══════════════════════════════════════
+async function autoSolve(){
+  if(G.solving||G.won)return;
+  if(!G.verified){msg('Not verified','err');return}
+  G.solving=true;msg('Auto-solving...','warn-c');
+  for(const triple of G.solution){
+    if(!G.solving)break;
+    for(const p of triple){
+      if(!G.solving)break;
+      if(!G.occ.has(p))continue;
+      const d=dec(p);
+      if(!isFree(d.x,d.y,d.z,G.occ))continue;
+      onTileClick(p);await sleep(350);
+    }
+    await sleep(200);
   }
+  G.solving=false;
 }
-function msg(txt,cls){
-  const el=document.getElementById('msg');
-  el.textContent=txt;el.className=cls||'ok';
+function sleep(ms){return new Promise(r=>setTimeout(r,ms))}
+
+// ═══════════════════════════════════════
+// OVERLAY
+// ═══════════════════════════════════════
+function showOverlay(title,sub,detail,btn,cb,stats=null){
+  document.getElementById('ovTitle').textContent=title;
+  document.getElementById('ovSub').textContent=sub;
+  document.getElementById('ovDetail').textContent=detail||'';
+  document.getElementById('ovBtn').textContent=btn||'Next Level';
+  G._overlayCallback=cb;
+  const se=document.getElementById('ovStats');se.innerHTML='';
+  if(stats)for(const[l,v]of stats)se.innerHTML+=`<div class="ov-stat-item"><div class="ov-stat-val">${v}</div><div class="ov-stat-lbl">${l}</div></div>`;
+  document.getElementById('overlay').classList.add('show');
 }
-function buildLegend(){
-  const leg=document.getElementById('leg');leg.innerHTML='';
-  const items=G.mode==='classic'
-    ?[1,2,3,4,5,6,7,8,9].map(v=>[v,`${v}`])
-    :[[1,'1+9'],[2,'2+8'],[3,'3+7'],[4,'4+6'],[5,'5+5']];
-  for(const[v,label]of items){
-    const d=document.createElement('div');
-    d.className='li';
-    d.innerHTML=`<div class="ld" style="background:${VCOL[v]}"></div><span>${label}</span>`;
-    leg.appendChild(d);
+function onOverlayBtn(){document.getElementById('overlay').classList.remove('show');if(G._overlayCallback)G._overlayCallback();G._overlayCallback=null}
+function levelComplete(){
+  const next=G.level+1;
+  const stats=[['Score',G.score],['Triples',G.triples],['Max Combo',G.maxCombo]];
+  if(next>LEVELS.length){
+    showOverlay('All Levels Complete!','You mastered Vita Mahjong Number!','','Play Again',()=>loadLevel(1),stats);return;
+  }
+  const ncfg=LEVELS[next-1];
+  showOverlay(`Level ${G.level} Complete!`,`Next: Level ${next} — ${ncfg.label}`,'',`Level ${next}`,()=>loadLevel(next),stats);
+}
+
+// ═══════════════════════════════════════
+// RESIZE
+// ═══════════════════════════════════════
+function resize(){
+  const{mx,my,mz}=maxXYZ(G.slots);
+  const depMax=SIDE_D+mz*SIDE_Z+2;
+  const w=PAD*2+(mx+1)*TS+mz*ZDX+Math.ceil(depMax);
+  const h=PAD*2+(my+1)*TS+mz*ZDY+Math.ceil(depMax*.6);
+  cv.width=w;cv.height=h;pfxCv.width=w;pfxCv.height=h;
+  const maxW=Math.min(window.innerWidth-12,420);
+  if(w>maxW){
+    const s=maxW/w;
+    cv.style.width=maxW+'px';cv.style.height=(h*s)+'px';
+    pfxCv.style.width=maxW+'px';pfxCv.style.height=(h*s)+'px';
+  }else{
+    cv.style.width='';cv.style.height='';
+    pfxCv.style.width='';pfxCv.style.height='';
   }
 }
 
-// ─────────────────────────────────────────────────
-// Init
-// ─────────────────────────────────────────────────
+// ═══════════════════════════════════════
+// NEW GAME
+// ═══════════════════════════════════════
+async function newGame(layoutType){
+  Tweens.killAll();Particles._l.length=0;
+  const sv=parseInt(document.getElementById('si').value)||42;
+  G.seed=sv;G.triples=0;G.won=false;G.noMoves=false;G.solving=false;
+  G.combo=0;G.maxCombo=0;G.comboTimer=0;G.score=0;
+  G.holder=[];G.history=[];G.hintPos=null;
+  hideGameOver();
+  msg('Generating...','warn-c');
+
+  const lt=layoutType||(G.level<=4?'small':'big');
+  G.slots=lt==='small'?layoutSmall():layoutBig();
+
+  const pool=makePool(G.slots.length);
+
+  const tries=lt==='small'?300:500;
+  await new Promise(r=>setTimeout(r,10));
+
+  let result=null,actualSeed=sv;
+  for(let attempt=0;attempt<30;attempt++){
+    result=await generate(G.slots,pool,sv+attempt,tries);
+    if(result){actualSeed=sv+attempt;break}
+    await new Promise(r=>setTimeout(r,0));
+  }
+
+  if(!result){msg('Generation failed! Try another seed.','err');return}
+  if(actualSeed!==sv)document.getElementById('si').value=actualSeed;
+
+  G.verified=verifySolution(result.board,result.solution);
+  G.origBoard=new Map(result.board);G.curBoard=new Map(result.board);
+  G.occ=new Set(result.board.keys());G.solution=result.solution;
+
+  G.tileVis=new Map();
+  for(const[pos,val]of G.curBoard)G.tileVis.set(pos,makeTileVis(pos,val));
+
+  const cfg=LEVELS[G.level-1]||LEVELS[0];
+  document.getElementById('levelBadge').textContent=`Level ${G.level} — ${cfg.label} · Match 3 · ${G.occ.size} tiles`;
+  msg(`${result.solution.length} triples · seed ${actualSeed}`+(G.verified?' ✓':' ✗'),'ok');
+
+  resize();renderHolder();renderBoard();updateUI();
+  animateTileEnter();
+}
+
+// ═══════════════════════════════════════
+// INIT
+// ═══════════════════════════════════════
 window.onload=()=>loadLevel(1);
+window.addEventListener('resize',()=>{if(G.slots.length){resize();renderBoard()}});
 </script>
 </body>
 </html>
